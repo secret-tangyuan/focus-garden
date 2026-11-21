@@ -38,9 +38,26 @@ server {
     add_header Permissions-Policy "geolocation=(), microphone=(), camera=(), interest-cohort=()" always;
     add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" always;
 
-    # 统一身份接口：只放行必要的三个路径，其余一律 404
-    location = __AUTH_PROXY_PREFIX__/login {
-        proxy_pass __BACKEND_ORIGIN__/auth/login;
+    # 身份服务：只放行必要的三个端点（路径由环境变量注入），
+    # 其余 __IDENTITY_PREFIX__/* 一律 404。
+    location = __IDENTITY_API_LOGIN__ {
+        proxy_pass __BACKEND_ORIGIN____IDENTITY_API_LOGIN__;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+    location = __IDENTITY_API_SESSION__ {
+        proxy_pass __BACKEND_ORIGIN____IDENTITY_API_SESSION__;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+    location = __IDENTITY_API_LOGOUT__ {
+        proxy_pass __BACKEND_ORIGIN____IDENTITY_API_LOGOUT__;
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-Host $host;
         proxy_set_header X-Forwarded-Proto $scheme;
@@ -48,25 +65,7 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     }
 
-    location = __AUTH_PROXY_PREFIX__/session {
-        proxy_pass __BACKEND_ORIGIN__/auth/session;
-        proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-Host $host;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    }
-
-    location = __AUTH_PROXY_PREFIX__/logout {
-        proxy_pass __BACKEND_ORIGIN__/auth/logout;
-        proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-Host $host;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    }
-
-    location __AUTH_PROXY_PREFIX__/ {
+    location __IDENTITY_PREFIX__/ {
         return 404;
     }
 

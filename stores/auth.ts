@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { useRuntimeConfig } from '#imports'
 
 export interface SessionUser {
   username: string
@@ -29,7 +30,13 @@ export const useAuth = defineStore('auth', {
 
   getters: {
     /** 顶栏显示的名字 */
-    displayName: state => state.user?.display_name || state.user?.username || ''
+    displayName: state => state.user?.display_name || state.user?.username || '',
+
+    /** 是否配置了身份服务（没配置就不显示登录入口） */
+    identityReady: () => {
+      const config = useRuntimeConfig().public
+      return !!(config.IDENTITY_API_LOGIN && config.IDENTITY_API_SESSION)
+    }
   },
 
   actions: {
@@ -47,8 +54,11 @@ export const useAuth = defineStore('auth', {
 
     /** 读取当前会话（页面加载时调一次） */
     async fetchSession () {
+      const endpoint = String(useRuntimeConfig().public.IDENTITY_API_SESSION || '')
+      if (!endpoint) { this.checked = true; return }
+
       try {
-        const response = await fetch('/auth/session', {
+        const response = await fetch(endpoint, {
           headers: { Accept: 'application/json' },
           credentials: 'include'
         })
@@ -73,14 +83,21 @@ export const useAuth = defineStore('auth', {
       }
 
       this.busy = true
+      const config = useRuntimeConfig().public
+      const endpoint = String(config.IDENTITY_API_LOGIN || '')
+      if (!endpoint) {
+        this.error = '未配置身份服务'
+        this.busy = false
+        return false
+      }
+
       try {
         const body = new URLSearchParams()
         body.set('username', username.trim())
         body.set('password', password)
-        body.set('mode', 'sso')
         body.set('next', location.origin + location.pathname)
 
-        const response = await fetch('/auth/login', {
+        const response = await fetch(endpoint, {
           method: 'POST',
           headers: {
             'Accept': 'application/json',
@@ -121,8 +138,11 @@ export const useAuth = defineStore('auth', {
 
     /** 退出登录 */
     async logout () {
+      const endpoint = String(useRuntimeConfig().public.IDENTITY_API_LOGOUT || '')
+      if (!endpoint) { return }
+
       try {
-        await fetch('/auth/logout', {
+        await fetch(endpoint, {
           method: 'POST',
           headers: { Accept: 'application/json' },
           credentials: 'include'

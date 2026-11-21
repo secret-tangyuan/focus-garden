@@ -13,7 +13,7 @@ import os
 import re
 import sys
 
-BASE = sys.argv[1] if len(sys.argv) > 1 else "http://focus.secret-tangyuan.test"
+BASE = sys.argv[1] if len(sys.argv) > 1 else os.environ.get("FOCUS_BASE_URL", "http://localhost:5174")
 SHOTS = os.environ.get("FOCUS_SHOTS_DIR") or "/mnt/c/Users/Administrator/Desktop/works/web_work/focus-garden/shots"
 os.makedirs(SHOTS, exist_ok=True)
 

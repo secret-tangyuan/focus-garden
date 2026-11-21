@@ -38,6 +38,7 @@ const settingsStore = useSettings()
       <IconChecklist size="24" class="inline-block" />
     </CButton>
     <CButton
+      v-if="auth.identityReady"
       circle
       :theme="ButtonTheme.Neutral"
       :importance="ButtonImportance.Tonal"

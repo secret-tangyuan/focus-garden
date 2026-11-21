@@ -14,35 +14,42 @@
 | 失焦暂停 | 切窗口 / 切标签页（失去焦点）自动暂停计时，并提示「已暂停计时」 |
 | 秒级计时 | 计时显示到秒（mm:ss），随时能看到还剩多少时间 |
 | 面板打扰提醒 | 专注进行中，点「设置」「我的森林」「登录」会先在按钮旁弹小窗确认：**点击可能会干扰注意力，建议不要点击**；不在专注中则直接打开 |
-| 精简版登录 | 入口页右上角就能登录：只有用户名 + 密码的小窗，贴在按钮旁，不遮挡整页；登录走同源 `/auth/` 反代到身份中心；注册 / 忘记密码在完整登录页 |
+| 精简版登录 | 入口页右上角就能登录：只有用户名 + 密码的小窗，贴在按钮旁，不遮挡整页；注册 / 忘记密码在完整登录页 |
 | 倒计时 | 专注 15/25/45/60/90 分钟、休息 5/10/15 分钟一键切换；沿用 FocusTide 的番茄钟节奏与音效 |
 | 种树 | 每完成一段专注种下一棵树；树种轮换（阔叶 / 针叶 / 樱花），树会随之后的专注次数逐级长大 |
 | 专注记录 | 最近 7 天柱状图、每次专注的时长与完成情况 |
 | 登录记录 | 每次进入专注模式都留一条登录记录（时间） |
 | 界面 | 纯色背景 + 格子，主色 `#bbddff`；关于页为双作者（左：秘密小汤圆，右：FocusTide 原作者 Imre Gera）；数据存在浏览器 localStorage |
 
-## 统一身份
+## 身份服务（可选）
 
-- 登录接口：`POST /auth/login`（`mode=sso`，带 `next`），会话 Cookie 落在站群域；
-- 本站 nginx 把 `/auth/*` 同源反代到身份中心后端（`BACKEND_ORIGIN`），因此不需要跨域；
-- 身份中心需要登记本域名（`auth-center/app/config.py` 的 `SITES`：`focus.secret-tangyuan.com`，
-  本地 `focus.secret-tangyuan.test`），否则 `next` 会被判为「回跳地址不合法」；
-- 完整登录页（注册 / 忘记密码）地址：`AUTH_BASE_URL/login?next=本站`。
+站点可以接入统一身份，实现「精简版登录」（用户名 + 密码的小窗，贴在按钮旁）。
+**接入是可选的**：不配置身份服务时登录入口自动隐藏，其余功能照常。
+
+所有地址与端点都通过环境变量注入，仓库里不出现任何真实地址与接口细节：
+
+| 环境变量 | 用途 |
+|---|---|
+| `IDENTITY_BASE_URL` | 完整登录页（注册 / 找回密码）的入口 |
+| `IDENTITY_API_LOGIN` | 登录端点 |
+| `IDENTITY_API_SESSION` | 会话查询端点 |
+| `IDENTITY_API_LOGOUT` | 退出端点 |
+| `IDENTITY_PREFIX` | nginx 里除上述三条外一律 404 的前缀 |
 
 ## 本地开发（WSL 测试环境）
 
-    # 同步 → 构建 → 发布到 /srv/stage → 重载 nginx
-    bash /srv/src/focus-garden/scripts/build_wsl_test_env.sh
+    # 同步 → 构建 → 发布到本地测试目录 → 重载 nginx
+    bash scripts/build_wsl_test_env.sh
 
-入口：http://focus.secret-tangyuan.test/
+入口：见 `deploy/env/local.env` 里的 `FOCUS_BASE_URL`
 
-地址只有一个来源：`deploy/env/local.env`（`FOCUS_BASE_URL` / `FOCUS_HOST`），改地址只改这个文件。
+地址只有一个来源：`deploy/env/local.env`（或 `prod.env`），改地址只改这个文件，仓库里只留 `*.env.example`。
 
 ## 验收脚本（真实浏览器）
 
-    python3 scripts/verify_ui.py
+    FOCUS_TEST_USER=<账号> FOCUS_TEST_PASSWORD=<口令> python3 scripts/verify_ui.py
 
-覆盖 20 项：进入页、快捷倒计时、秒级计时、种树提示、森林面板、登录/专注记录、
+覆盖 26 项：进入页、快捷倒计时、秒级计时、种树提示、森林面板、登录/专注记录、
 退出全屏拦截 + 回到全屏自动继续、失焦自动暂停、打开面板前的提醒、设置页文案完整性、关于页双作者。
 
 ## 目录

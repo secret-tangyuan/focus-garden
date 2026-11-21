@@ -55,8 +55,11 @@ export default defineNuxtConfig({
       PACKAGE_VERSION: version,
       PLATFORM: AppPlatform.web,
       URL: 'https://focustide.app',
-      /** 身份中心地址：构建期用 NUXT_PUBLIC_AUTH_BASE_URL 注入，不写死域名 */
-      AUTH_BASE_URL: ''
+      /** 身份服务：全部由环境变量注入，仓库里不出现任何真实地址与接口路径 */
+      IDENTITY_BASE_URL: '',
+      IDENTITY_API_LOGIN: '',
+      IDENTITY_API_SESSION: '',
+      IDENTITY_API_LOGOUT: ''
     }
   },
 

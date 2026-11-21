@@ -51,6 +51,7 @@ const skip = () => {
           {{ $t('appbar.settings') }}
         </button>
         <button
+          v-if="auth.identityReady"
           class="flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-2 text-xs font-bold text-slate-500 shadow-sm transition hover:bg-white hover:text-slate-800"
           :aria-label="$t('appbar.login')"
           @click="requestAccess('login', $event.currentTarget.getBoundingClientRect())"

@@ -38,7 +38,7 @@ const submit = async () => {
 
 /** 完整登录页（注册 / 忘记密码在这里） */
 const fullLoginUrl = computed(() => {
-  const base = String(runtimeConfig.public.AUTH_BASE_URL || '').replace(/\/$/, '')
+  const base = String(runtimeConfig.public.IDENTITY_BASE_URL || '').replace(/\/$/, '')
   const back = encodeURIComponent(location.origin + location.pathname)
   return base ? base + '/login?next=' + back : ''
 })
