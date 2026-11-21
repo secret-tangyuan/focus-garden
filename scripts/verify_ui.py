@@ -1,19 +1,15 @@
 #!/usr/bin/env python3
 """专注学习站 · 真实 UI 验收（Playwright + Chromium）
 
-覆盖：
-1. 进入页（强制全屏门）出现
-2. 快捷倒计时可选
-3. 开始专注 → 计时运行
-4. 退出全屏 → 拦截层出现，点「回到全屏」恢复
-5. 完成一段专注 → 种下一棵树 + 提示
-6. 森林面板：树、统计
-7. 记录面板：登录记录 / 专注记录
+覆盖：进入页 / 快捷倒计时 / 秒级计时 / 计时 / 退出全屏拦截 + 自动暂停 /
+      失焦自动暂停 / 种树 / 森林面板 / 登录与专注记录 /
+      打开面板前的提醒 / 设置页文案完整性
 
 用法：python3 scripts/verify_ui.py [BASE_URL]
 """
 import asyncio
 import os
+import re
 import sys
 
 BASE = sys.argv[1] if len(sys.argv) > 1 else "http://focus.secret-tangyuan.test"
@@ -28,11 +24,18 @@ def check(name, ok, detail=""):
     print(("  PASS  " if ok else "  FAIL  ") + name + (("  | " + detail) if detail else ""))
 
 
+def timer_state(page):
+    return page.evaluate("""() => {
+      const app = document.querySelector('#__nuxt').__vue_app__
+      return app.config.globalProperties.$pinia.state.value.schedule.timerState
+    }""")
+
+
 async def main():
     from playwright.async_api import async_playwright
 
     async with async_playwright() as pw:
-        browser = await pw.chromium.launch(args=["--no-sandbox", "--autoplay-policy=no-user-gesture-required"])
+        browser = await pw.chromium.launch(args=["--no-sandbox"])
         page = await browser.new_page(viewport={"width": 1440, "height": 900})
         errors = []
         page.on("pageerror", lambda e: errors.append(str(e)))
@@ -62,10 +65,12 @@ async def main():
         await gate.click()
         await page.wait_for_timeout(1500)
 
-        timer_text = await page.locator("body").inner_text()
-        check("计时已开始（显示 10 秒倒计时）", "00:0" in timer_text or "9" in timer_text)
+        # 4. 秒级显示
+        body_text = await page.locator("body").inner_text()
+        display_text = re.sub(r"\s+", "", await page.locator(".timer-display").first.inner_text())
+        check("计时显示到秒（mm:ss）", re.fullmatch(r"\d{4}", display_text) is not None, display_text)
 
-        # 4. 等这一段专注跑完 → 种树（轮询提示，提示只停留 3 秒）
+        # 5. 等这一段专注跑完 → 种树
         planted = 0
         for _ in range(40):
             await page.wait_for_timeout(500)
@@ -81,28 +86,13 @@ async def main():
         }""")
         check("森林里已记录一棵树", trees >= 1, "trees=" + str(trees))
 
-        # 5b. 再次开始专注 → 退出全屏 → 拦截层
-        # 确保计时处于运行中（可能已自动进入休息段）
-        state_now = await page.evaluate("""() => {
-          const app = document.querySelector('#__nuxt').__vue_app__
-          return app.config.globalProperties.$pinia.state.value.schedule.timerState
-        }""")
+        # 6. 退出全屏 → 拦截层（计时运行中）
+        state_now = await timer_state(page)
         if state_now != 1:
             await page.get_by_role("button", name="开始或暂停计时器").click()
             await page.wait_for_timeout(900)
-        state_now = await page.evaluate("""() => {
-          const app = document.querySelector('#__nuxt').__vue_app__
-          return app.config.globalProperties.$pinia.state.value.schedule.timerState
-        }""")
-        check("计时处于运行中", state_now == 1, "timerState=" + str(state_now))
-
-        # 退出全屏（真退出，触发 fullscreenchange）
         await page.evaluate("""async () => {
-          if (document.fullscreenElement) {
-            await document.exitFullscreen()
-          } else {
-            document.dispatchEvent(new Event('fullscreenchange'))
-          }
+          if (document.fullscreenElement) { await document.exitFullscreen() }
         }""")
         await page.wait_for_timeout(900)
         guard = page.get_by_role("button", name="回到全屏")
@@ -110,32 +100,69 @@ async def main():
         check("退出全屏后出现拦截层", guard_visible)
         if guard_visible:
             await page.screenshot(path=os.path.join(SHOTS, "02-fullscreen-guard.png"))
-            paused = await page.evaluate("""() => {
-              const app = document.querySelector('#__nuxt').__vue_app__
-              const pinia = app.config.globalProperties.$pinia
-              return pinia.state.value.schedule.timerState
-            }""")
-            check("退出全屏后计时自动暂停", paused == 2, "timerState=" + str(paused))
             await guard.click()
             await page.wait_for_timeout(900)
-            gone = await page.get_by_role("button", name="回到全屏").count() == 0
-            check("点「回到全屏」后拦截层消失", gone, "无头浏览器可能不支持真全屏")
+            check("点「回到全屏」后拦截层消失", await page.get_by_role("button", name="回到全屏").count() == 0)
+            check("点「回到全屏」后计时自动继续", await timer_state(page) == 1)
 
-        # 6. 森林面板
+        # 7. 失焦自动暂停
+        await page.evaluate("() => { window.dispatchEvent(new Event('blur')) }")
+        await page.wait_for_timeout(700)
+        check("失去焦点后计时自动暂停", await timer_state(page) == 2)
+        check("失焦提示出现", await page.get_by_text("已暂停计时").count() > 0)
+        await page.screenshot(path=os.path.join(SHOTS, "06-blur-pause.png"))
+
+        # 8. 打开面板前先询问
         await page.get_by_label("我的森林").click()
-        await page.wait_for_timeout(800)
+        await page.wait_for_timeout(600)
+        body_text = await page.locator("body").inner_text()
+        check("点「我的森林」先弹出提醒", "点击可能会干扰注意力" in body_text)
+        await page.screenshot(path=os.path.join(SHOTS, "07-distract-guard.png"))
+        await page.get_by_role("button", name="不了", exact=True).click()
+        await page.wait_for_timeout(500)
+        check("选「不了」则不打开面板", await page.locator("aside").first.is_visible() is False)
+
+        await page.get_by_label("我的森林").click()
+        await page.wait_for_timeout(500)
+        await page.get_by_role("button", name="仍然打开").click()
+        await page.wait_for_timeout(700)
+
+        # 9. 森林面板
         panel_text = await page.locator("aside").inner_text()
-        check("森林面板打开且有树", "阔叶" in panel_text or "针叶" in panel_text or "樱花" in panel_text, panel_text[:80])
+        check("森林面板打开且有树", "阔叶" in panel_text or "针叶" in panel_text or "樱花" in panel_text)
         await page.screenshot(path=os.path.join(SHOTS, "04-forest.png"))
 
-        # 7. 记录面板
+        # 10. 记录面板
         await page.get_by_role("button", name="记录").click()
         await page.wait_for_timeout(600)
         record_text = await page.locator("aside").inner_text()
         check("记录面板有登录记录", "登录记录" in record_text)
         check("记录面板有专注记录", "专注记录" in record_text)
-        check("专注记录标记为已完成", "已完成" in record_text, record_text[:120])
+        check("专注记录标记为已完成", "已完成" in record_text)
         await page.screenshot(path=os.path.join(SHOTS, "05-records.png"))
+
+        # 先关掉森林面板，避免遮挡设置按钮
+        await page.locator("aside").get_by_label("关闭").click()
+        await page.wait_for_timeout(500)
+
+        # 11. 设置页文案完整性（不能出现未匹配的 key）
+        await page.get_by_label("设置").click()
+        await page.wait_for_timeout(600)
+        await page.get_by_role("button", name="仍然打开").click()
+        await page.wait_for_timeout(800)
+        settings_text = await page.locator("body").inner_text()
+        raw_keys = re.findall(r"settings\.values\.[\w.]+|\b_[a-zA-Z]+\b", settings_text)
+        check("设置页没有未匹配的翻译键", len(raw_keys) == 0, ", ".join(raw_keys[:3]))
+        check("设置页有中文条目（如「段落结束」）", "段落结束" in settings_text)
+        await page.screenshot(path=os.path.join(SHOTS, "08-settings.png"))
+
+        # 12. 关于页双作者
+        await page.get_by_role("tab", name="关于").click()
+        await page.wait_for_timeout(600)
+        about_text = await page.locator("body").inner_text()
+        check("关于页显示双作者（秘密小汤圆 + FocusTide）",
+              "秘密小汤圆" in about_text and "FocusTide" in about_text)
+        await page.screenshot(path=os.path.join(SHOTS, "09-about.png"))
 
         fatal = [e for e in errors if "favicon" not in e.lower() and "404" not in e]
         check("无前端报错", len(fatal) == 0, "; ".join(fatal[:3]))

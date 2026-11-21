@@ -15,7 +15,9 @@ export const useFocusMode = defineStore('focusMode', {
     /** 是否需要阻止操作（退出了全屏） */
     blocked: false,
     /** 本次专注中退出全屏的次数 */
-    exitCount: 0
+    exitCount: 0,
+    /** 是否因为退出全屏而暂停了计时（回到全屏后自动继续） */
+    pausedByExit: false
   }),
 
   getters: {
@@ -94,6 +96,16 @@ export const useFocusMode = defineStore('focusMode', {
     markExitDuringSession () {
       this.blocked = true
       this.exitCount += 1
+    },
+
+    /** 标记计时是被「退出全屏」暂停的 */
+    markPausedByExit () {
+      this.pausedByExit = true
+    },
+
+    /** 清掉「因退出全屏而暂停」的标记 */
+    clearPausedByExit () {
+      this.pausedByExit = false
     }
   }
 })

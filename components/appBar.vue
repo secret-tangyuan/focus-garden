@@ -44,7 +44,7 @@ const settingsStore = useSettings()
       no-padding
       inner-class="p-1"
       :aria-label="$t('appbar.garden')"
-      @click="openPanels.garden = !openPanels.garden"
+      @click="openPanels.request('garden', $event.currentTarget.getBoundingClientRect())"
     >
       <IconTrees size="24" class="inline-block" />
     </CButton>
@@ -57,7 +57,7 @@ const settingsStore = useSettings()
       no-content-theme
       no-padding
       inner-class="p-1"
-      @click="openPanels.settings = !openPanels.settings"
+      @click="openPanels.request('settings', $event.currentTarget.getBoundingClientRect())"
     >
       <IconSettings size="24" class="inline-block" />
     </CButton>

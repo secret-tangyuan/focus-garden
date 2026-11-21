@@ -21,6 +21,7 @@ import FullscreenGuard from '~/components/focus/fullscreenGuard.vue'
 import PlantToast from '~/components/garden/plantToast.vue'
 import StartGate from '~/components/focus/startGate.vue'
 import QuickPresets from '~/components/focus/quickPresets.vue'
+import DistractionTip from '~/components/focus/distractionTip.vue'
 
 // components
 const AppBar = defineAsyncComponent(() => import('@/components/appBar.vue'))
@@ -163,6 +164,7 @@ const progressBarSchedules = computed(() => {
       <FullscreenGuard />
       <PlantToast />
       <StartGate />
+      <DistractionTip />
     </section>
   </Layout>
 </template>

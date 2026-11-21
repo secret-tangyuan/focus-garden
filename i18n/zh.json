@@ -61,7 +61,10 @@
       "support": "支持此项目",
       "supportBody": "我在我的空余时间里开发了 FocusTide ，希望你能帮助我一起开发它！",
       "mobileSupport": "由于 Google Play 商店的规则，我无法向您展示移动应用程序中的任何链接以便向项目捐赠。",
-      "share": "或在社交媒体上分享这个应用："
+      "share": "或在社交媒体上分享这个应用：",
+      "project": "专注学习站 · 本项目",
+      "original": "原始项目 · 原作者 Imre Gera",
+      "licenseNote": "本站基于 FocusTide（MIT 许可证）改造，保留原版权声明与许可声明。"
     },
     "values": {
       "manage": {
@@ -77,8 +80,12 @@
           "persistent": {
             "_title": "常驻通知",
             "_description": "显示当前进度"
-          }
-        }
+          },
+          "_title": "通知",
+          "_description": "移动端通知相关设置"
+        },
+        "_title": "移动端",
+        "_description": "仅移动端生效的选项"
       },
       "lang": {
         "_title": "语言",
@@ -106,7 +113,9 @@
         "enabled": {
           "_title": "启用自适应刷新频率",
           "_description": "当 FocusTide 在后台运行的时候，其计时器的刷新频率会降低"
-        }
+        },
+        "_title": "自适应刷新",
+        "_description": "页面隐藏时降低刷新频率，省电"
       },
       "schedule": {
         "longPauseInterval": {
@@ -125,7 +134,9 @@
           "showSectionType": {
             "_title": "在时间表中显示不同时段的类型",
             "_description": "显示时间表中的显示当前时段的类型"
-          }
+          },
+          "_title": "时间表显示",
+          "_description": "顶部显示后续的时间表"
         },
         "lengths": {
           "_title": "预设时间表",
@@ -152,13 +163,17 @@
             "_title": "长休息",
             "_description": ""
           }
-        }
+        },
+        "_title": "计时",
+        "_description": "专注与休息的时长安排"
       },
       "performance": {
         "showProgressBar": {
           "_title": "显示进度条",
           "_description": "在背景中显示进度"
-        }
+        },
+        "_title": "性能",
+        "_description": "影响页面表现的选项"
       },
       "permissions": {
         "audio": {
@@ -168,7 +183,9 @@
         "notifications": {
           "_title": "推送通知权限",
           "_description": "在每部分结束时发送通知提醒"
-        }
+        },
+        "_title": "权限",
+        "_description": "浏览器授予的权限"
       },
       "audio": {
         "volume": {
@@ -176,21 +193,27 @@
           "_description": ""
         },
         "soundSet": {
-          "_title": "Sound set",
+          "_title": "提示音套装",
           "_description": "用于通知的提示音",
           "_values": {
-            "musical": "Musical"
+            "musical": "音乐",
+            "sharp": "短促蜂鸣"
           },
           "_valueDescription": {
-            "musical": "默认提示音"
+            "musical": "默认提示音",
+            "sharp": "更短促，适合训练"
           }
-        }
+        },
+        "_title": "音频",
+        "_description": "提示音相关设置"
       },
       "timerControls": {
         "enableKeyboardShortcuts": {
           "_title": "启用键盘快捷键",
           "_description": "以空格键来 开始/暂停 计时器"
-        }
+        },
+        "_title": "操作",
+        "_description": "键盘与计时器控制"
       },
       "tasks": {
         "enabled": {
@@ -204,13 +227,17 @@
         "removeCompletedTasks": {
           "_title": "自动删除已完成的任务",
           "_description": "工作时间结束后，自动删除已完成的任务"
-        }
+        },
+        "_title": "任务清单",
+        "_description": "专注时显示待办任务"
       },
       "pageTitle": {
         "useTickEmoji": {
           "_title": "在标题中使用表情符号",
           "_description": "用 :very_check_mark: 代替 完成"
-        }
+        },
+        "_title": "页面标题",
+        "_description": "浏览器标签页显示的内容"
       },
       "visuals": {
         "theme": {
@@ -221,11 +248,27 @@
         "darkMode": {
           "_title": "启用暗黑模式",
           "_description": "黑暗，即是生产力本身"
-        }
+        },
+        "_title": "外观",
+        "_description": "主题色与深色模式"
       },
       "reset": {
         "_title": "重置所有设置",
         "_description": "所有的设置会被重置，此应用将自动重载"
+      },
+      "sectionEndAction": {
+        "_title": "段落结束",
+        "_description": "一段计时结束时如何处理",
+        "_values": {
+          "continue": "继续计时",
+          "stop": "停止并打勾",
+          "skip": "直接进入下一段"
+        },
+        "_valueDescription": {
+          "continue": "到点后继续走秒，不打断",
+          "stop": "显示完成标记，手动开始下一段",
+          "skip": "自动开始下一段"
+        }
       }
     }
   },
@@ -369,7 +412,18 @@
     },
     "workLength": "专注",
     "pauseLength": "休息",
-    "minutes": "分钟"
+    "minutes": "分钟",
+    "blur": {
+      "title": "已暂停计时",
+      "hint": "窗口失去焦点，回到后点击继续"
+    },
+    "distract": {
+      "title": "要打开这个面板吗？",
+      "body": "点击可能会干扰注意力，建议不要点击。",
+      "stay": "不了，继续专注",
+      "stayShort": "不了",
+      "openAnyway": "仍然打开"
+    }
   },
   "garden": {
     "title": "我的森林",
