@@ -8,6 +8,7 @@ import { useSchedule } from '~~/stores/schedule'
 import { useSettings } from '~~/stores/settings'
 
 const openPanels = useOpenPanels()
+const auth = useAuth()
 const { requestAccess } = usePanelAccess()
 const scheduleStore = useSchedule()
 const settingsStore = useSettings()
@@ -47,7 +48,8 @@ const settingsStore = useSettings()
       :aria-label="$t('appbar.login')"
       @click="requestAccess('login', $event.currentTarget.getBoundingClientRect())"
     >
-      <IconLogin size="24" class="inline-block" />
+      <span v-if="auth.authenticated" class="text-xs font-bold">{{ auth.displayName }}</span>
+      <IconLogin v-else size="24" class="inline-block" />
     </CButton>
     <CButton
       circle

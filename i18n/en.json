@@ -458,5 +458,17 @@
     "clear": "Clear",
     "clearConfirm": "Confirm clear?",
     "hint": "Stored in this browser only. Clearing cannot be undone."
+  },
+  "login": {
+    "title": "Sign in",
+    "subtitle": "Unified identity · focus study",
+    "username": "Username",
+    "usernamePlaceholder": "Enter your username",
+    "password": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "submit": "Sign in",
+    "submitting": "Signing in…",
+    "welcome": "Signed in",
+    "full": "Register / forgot password (full page)"
   }
 }

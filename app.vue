@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { useHead } from '#imports'
 import { useSchedule } from '~~/stores/schedule'
 import { useSettings } from '~~/stores/settings'
+import { useAuth } from '~~/stores/auth'
 
 import { useTicker } from '~~/components/ticker'
 import { useWeb } from '~~/platforms/web'
@@ -22,6 +23,7 @@ import PlantToast from '~/components/garden/plantToast.vue'
 import StartGate from '~/components/focus/startGate.vue'
 import QuickPresets from '~/components/focus/quickPresets.vue'
 import DistractionTip from '~/components/focus/distractionTip.vue'
+import LoginPanel from '~/components/focus/loginPanel.vue'
 
 // components
 const AppBar = defineAsyncComponent(() => import('@/components/appBar.vue'))
@@ -74,6 +76,9 @@ if (!import.meta.server) {
 }
 
 onMounted(() => {
+  // 读取统一身份会话（精简登录用）
+  useAuth().fetchSession()
+
   if (typeof window !== 'undefined') {
     if ('serviceWorker' in navigator) {
       const registerSw = () => {
@@ -165,6 +170,7 @@ const progressBarSchedules = computed(() => {
       <PlantToast />
       <StartGate />
       <DistractionTip />
+      <LoginPanel />
     </section>
   </Layout>
 </template>

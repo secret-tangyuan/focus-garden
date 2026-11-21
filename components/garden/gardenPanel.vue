@@ -49,7 +49,7 @@ const maxWeekly = computed(() => Math.max(1, ...history.weeklyMinutes.map(day =>
 
 <template>
   <aside
-    class="fixed right-0 top-0 z-50 flex h-full w-full max-w-md flex-col overflow-y-auto rounded-l-3xl border-l border-slate-200 bg-white shadow-2xl"
+    class="fixed right-0 top-0 z-[96] flex h-full w-full max-w-md flex-col overflow-y-auto rounded-l-3xl border-l border-slate-200 bg-white shadow-2xl"
   >
     <header class="flex items-center gap-3 px-6 pb-2 pt-6">
       <span class="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand/25 text-brand-strong">

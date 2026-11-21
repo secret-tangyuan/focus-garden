@@ -31,7 +31,7 @@ useHead(() => {
   <div class="relative w-full h-full">
     <transition enter-from-class="opacity-0" enter-active-class="transition duration-300" leave-to-class="opacity-0" leave-active-class="transition">
       <!-- Darkening overlay -->
-      <div v-show="openPanels.settings" class="fixed z-40 w-screen h-screen bg-black bg-opacity-40" />
+      <div v-show="openPanels.settings" class="fixed z-[96] w-screen h-screen bg-black bg-opacity-40" />
     </transition>
     <transition enter-from-class="translate-x-32 opacity-0" enter-active-class="transition duration-300 ease-out" leave-to-class="scale-95 opacity-0" leave-active-class="transition ease-in">
       <SettingsPanel v-show="openPanels.settings" class="right-0" />

@@ -51,6 +51,10 @@ async def main():
         check("进入页出现（强制全屏门）", await gate.count() > 0)
         await page.screenshot(path=os.path.join(SHOTS, "01-gate.png"))
 
+        # 1b. 入口页就能设置与登录
+        check("入口页有「打开设置」入口", await page.get_by_label("打开设置").count() > 0)
+        check("入口页有「登录」入口", await page.get_by_label("登录").count() > 0)
+
         # 2. 快捷倒计时
         chips = await page.locator("button", has_text="25").count()
         check("快捷倒计时（15/25/45/60/90）可选", chips > 0)
@@ -131,15 +135,17 @@ async def main():
         await page.locator("aside").get_by_label("关闭").click()
         await page.wait_for_timeout(500)
 
-        # 10. 登录入口：新标签页打开身份中心
-        try:
-            async with context.expect_page(timeout=8000) as new_page_info:
-                await page.get_by_label("登录").click()
-            new_page = await new_page_info.value
-            check("登录入口在新标签页打开身份中心", "auth." in new_page.url, new_page.url[:90])
-            await new_page.close()
-        except Exception as exc:
-            check("登录入口在新标签页打开身份中心", False, str(exc)[:90])
+        # 10. 精简版登录（站内面板，同源走 nginx 反代）
+        await page.get_by_label("登录").first.click()
+        await page.wait_for_timeout(700)
+        check("点「登录」打开站内精简登录面板", await page.get_by_text("统一身份 · 专注学习站").count() > 0)
+        await page.get_by_label("用户名").fill("admin")
+        await page.get_by_label("密码").fill("Local-Admin-Test-2026!")
+        await page.locator("form").get_by_role("button", name="登录").click()
+        await page.wait_for_timeout(2500)
+        check("精简版登录成功（提示已登录）", await page.get_by_text("已登录").count() > 0)
+        check("登录失败没有误报", await page.get_by_text("用户名或密码错误").count() == 0)
+        await page.screenshot(path=os.path.join(SHOTS, "10-login.png"))
 
         # 11. 专注中：二次确认小窗
         if await timer_state(page) != 1:

@@ -452,5 +452,17 @@
     "clear": "清空",
     "clearConfirm": "确认清空？",
     "hint": "数据保存在本机浏览器，清空后不可恢复。"
+  },
+  "login": {
+    "title": "登录",
+    "subtitle": "统一身份 · 专注学习站",
+    "username": "用户名",
+    "usernamePlaceholder": "输入用户名",
+    "password": "密码",
+    "passwordPlaceholder": "输入密码",
+    "submit": "登录",
+    "submitting": "登录中…",
+    "welcome": "已登录",
+    "full": "注册 / 忘记密码（完整登录页）"
   }
 }

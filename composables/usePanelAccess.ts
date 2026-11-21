@@ -1,5 +1,6 @@
 import { useOpenPanels, type PanelName, type TriggerRect } from '~~/stores/openpanels'
 import { TimerState, useSchedule } from '~~/stores/schedule'
+import { useAuth } from '~~/stores/auth'
 
 export type AccessTarget = PanelName | 'login'
 
@@ -11,6 +12,7 @@ export type AccessTarget = PanelName | 'login'
 export function usePanelAccess () {
   const openPanels = useOpenPanels()
   const scheduleStore = useSchedule()
+  const auth = useAuth()
   const runtimeConfig = useRuntimeConfig()
 
   /** 专注进行中 */
@@ -53,7 +55,8 @@ export function usePanelAccess () {
     }
 
     if (target === 'login') {
-      openLoginTab()
+      // 站内精简版登录（按钮旁的小窗）
+      auth.openLogin(rect)
       return
     }
 
@@ -65,8 +68,9 @@ export function usePanelAccess () {
     const target = openPanels.pending
 
     if (target === 'login') {
+      const rect = openPanels.pendingRect
       openPanels.cancel()
-      openLoginTab()
+      auth.openLogin(rect)
       return
     }
 
