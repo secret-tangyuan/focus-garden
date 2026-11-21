@@ -77,7 +77,15 @@ if (!import.meta.server) {
 
 onMounted(() => {
   // 读取统一身份会话（精简登录用）
-  useAuth().fetchSession()
+  const auth = useAuth()
+  auth.fetchSession()
+
+  // 从后台切回前台时，会话快过期就自动续签（免密）
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      void auth.renewIfStale()
+    }
+  })
 
   if (typeof window !== 'undefined') {
     if ('serviceWorker' in navigator) {

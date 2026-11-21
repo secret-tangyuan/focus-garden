@@ -10,11 +10,17 @@ export interface SessionUser {
   must_change_pw?: boolean
 }
 
-/** 续签间隔（毫秒） */
-const RENEW_INTERVAL = 20 * 60 * 1000
+/** 续签提前量：剩余有效期少于这个值时就续（毫秒） */
+const RENEW_LEAD = 30 * 60 * 1000
+
+/** 两次续签之间的最小间隔（毫秒），避免频繁切页面就续 */
+const RENEW_MIN_GAP = 5 * 60 * 1000
 
 /** 续签定时器 */
 let renewTimer: ReturnType<typeof setTimeout> | null = null
+
+/** 上次续签的时间 */
+let lastRenewAt = 0
 
 export const useAuth = defineStore('auth', {
   state: () => ({
@@ -48,8 +54,11 @@ export const useAuth = defineStore('auth', {
   },
 
   actions: {
-    /** 自动续签：短效会话每 20 分钟续一次（免密） */
-    scheduleRenew (scope: string) {
+    /**
+     * 排程续签：会话快过期时（剩余有效期不足 30 分钟）自动续一次，免密。
+     * 排程依据服务端给的 expires_at，而不是固定间隔。
+     */
+    scheduleRenew (scope: string, expiresAt?: number) {
       if (renewTimer) {
         clearTimeout(renewTimer)
         renewTimer = null
@@ -59,7 +68,24 @@ export const useAuth = defineStore('auth', {
       const endpoint = String(useRuntimeConfig().public.IDENTITY_API_RENEW || '')
       if (!endpoint) { return }
 
-      renewTimer = setTimeout(() => { void this.renew() }, RENEW_INTERVAL)
+      const remaining = expiresAt ? expiresAt * 1000 - Date.now() : 0
+      if (remaining <= 0) {
+        renewTimer = setTimeout(() => { void this.renew() }, 60 * 1000)
+        return
+      }
+
+      // 提前量最多 30 分钟，且不超过剩余时间的一半
+      const lead = Math.min(RENEW_LEAD, remaining / 2)
+      const delay = Math.max(60 * 1000, remaining - lead)
+
+      renewTimer = setTimeout(() => { void this.renew() }, delay)
+    },
+
+    /** 从后台切回前台：会话快过期时立刻续一次 */
+    async renewIfStale () {
+      if (!this.authenticated) { return }
+      if (Date.now() - lastRenewAt < RENEW_MIN_GAP) { return }
+      await this.renew()
     },
 
     /** 续签一次短效会话 */
@@ -85,7 +111,8 @@ export const useAuth = defineStore('auth', {
         if (!response.ok || !data.ok) { return false }
 
         this.expired = false
-        this.scheduleRenew(String(data.scope || 'tmp'))
+        lastRenewAt = Date.now()
+        this.scheduleRenew(String(data.scope || 'tmp'), Number(data.expires_at || 0) || undefined)
         return true
       } catch (err) {
         console.warn('renew failed', err)
@@ -121,7 +148,8 @@ export const useAuth = defineStore('auth', {
         this.user = data.authenticated ? data.user : null
         this.expired = false
         if (this.authenticated) {
-          this.scheduleRenew(String(data.scope || ''))
+          lastRenewAt = Date.now()
+          this.scheduleRenew(String(data.scope || ''), Number(data.expires_at || 0) || undefined)
         }
       } catch (err) {
         console.warn('session check failed', err)
