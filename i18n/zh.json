@@ -22,7 +22,8 @@
   "appbar": {
     "settings": "打开设置",
     "todo": "打开任务列表",
-    "garden": "我的森林"
+    "garden": "我的森林",
+    "login": "登录"
   },
   "timer": {
     "approximate": {

@@ -1,0 +1,77 @@
+import { useOpenPanels, type PanelName, type TriggerRect } from '~~/stores/openpanels'
+import { TimerState, useSchedule } from '~~/stores/schedule'
+
+export type AccessTarget = PanelName | 'login'
+
+/**
+ * 设置 / 森林 / 登录 的打开入口
+ * - 任何时候都能打开
+ * - 只有专注进行中（计时在跑）时才先弹一次二次确认
+ */
+export function usePanelAccess () {
+  const openPanels = useOpenPanels()
+  const scheduleStore = useSchedule()
+  const runtimeConfig = useRuntimeConfig()
+
+  /** 专注进行中 */
+  const isFocusing = computed(() => scheduleStore.timerState === TimerState.RUNNING)
+
+  /** 身份中心地址（构建期注入，不写死域名） */
+  const authBaseUrl = computed(() => String(runtimeConfig.public.AUTH_BASE_URL || '').replace(/\/$/, ''))
+
+  /** 登录地址：带 next 回跳到本站 */
+  const loginUrl = () => {
+    if (!import.meta.client) { return '' }
+    const back = `${location.origin}${location.pathname}`
+    return `${authBaseUrl.value}/login?next=${encodeURIComponent(back)}`
+  }
+
+  /** 在新标签页打开登录（不加 noopener，统一身份靠 opener 回传） */
+  const openLoginTab = () => {
+    if (!import.meta.client) { return }
+    const url = loginUrl()
+    if (!url) { return }
+    window.open(url, '_blank')
+  }
+
+  /**
+   * 打开面板 / 登录
+   * @param target 目标面板或登录
+   * @param rect 触发按钮位置（专注中弹小窗时贴着它显示）
+   */
+  const requestAccess = (target: AccessTarget, rect?: TriggerRect) => {
+    if (target !== 'login' && openPanels[target]) {
+      // 已经打开 → 直接关闭
+      openPanels[target] = false
+      return
+    }
+
+    if (isFocusing.value) {
+      // 专注中：先在小窗里确认一次
+      openPanels.request(target, rect)
+      return
+    }
+
+    if (target === 'login') {
+      openLoginTab()
+      return
+    }
+
+    openPanels[target] = true
+  }
+
+  /** 确认打开（处理登录这种非面板的目标） */
+  const confirmAccess = () => {
+    const target = openPanels.pending
+
+    if (target === 'login') {
+      openPanels.cancel()
+      openLoginTab()
+      return
+    }
+
+    openPanels.confirm()
+  }
+
+  return { isFocusing, requestAccess, confirmAccess, openLoginTab, loginUrl }
+}

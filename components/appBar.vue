@@ -1,5 +1,5 @@
 <script setup>
-import { IconSettings, IconChecklist, IconTrees } from '@tabler/icons-vue'
+import { IconSettings, IconChecklist, IconTrees, IconLogin } from '@tabler/icons-vue'
 import { ButtonImportance, ButtonTheme } from './base/types/button'
 import CButton from '~~/components/base/uiButton.vue'
 import ScheduleView from '@/components/schedule/scheduleDisplay.vue'
@@ -8,6 +8,7 @@ import { useSchedule } from '~~/stores/schedule'
 import { useSettings } from '~~/stores/settings'
 
 const openPanels = useOpenPanels()
+const { requestAccess } = usePanelAccess()
 const scheduleStore = useSchedule()
 const settingsStore = useSettings()
 </script>
@@ -37,6 +38,19 @@ const settingsStore = useSettings()
     </CButton>
     <CButton
       circle
+      :theme="ButtonTheme.Neutral"
+      :importance="ButtonImportance.Tonal"
+      class="transition rounded-full h-11"
+      no-content-theme
+      no-padding
+      inner-class="p-1"
+      :aria-label="$t('appbar.login')"
+      @click="requestAccess('login', $event.currentTarget.getBoundingClientRect())"
+    >
+      <IconLogin size="24" class="inline-block" />
+    </CButton>
+    <CButton
+      circle
       :theme="openPanels.garden ? ButtonTheme.Primary : ButtonTheme.Neutral"
       :importance="ButtonImportance.Tonal"
       class="transition rounded-full h-11"
@@ -44,7 +58,7 @@ const settingsStore = useSettings()
       no-padding
       inner-class="p-1"
       :aria-label="$t('appbar.garden')"
-      @click="openPanels.request('garden', $event.currentTarget.getBoundingClientRect())"
+      @click="requestAccess('garden', $event.currentTarget.getBoundingClientRect())"
     >
       <IconTrees size="24" class="inline-block" />
     </CButton>
@@ -57,7 +71,7 @@ const settingsStore = useSettings()
       no-content-theme
       no-padding
       inner-class="p-1"
-      @click="openPanels.request('settings', $event.currentTarget.getBoundingClientRect())"
+      @click="requestAccess('settings', $event.currentTarget.getBoundingClientRect())"
     >
       <IconSettings size="24" class="inline-block" />
     </CButton>

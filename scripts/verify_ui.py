@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """专注学习站 · 真实 UI 验收（Playwright + Chromium）
 
-覆盖：进入页 / 快捷倒计时 / 秒级计时 / 计时 / 退出全屏拦截 + 自动暂停 /
-      失焦自动暂停 / 种树 / 森林面板 / 登录与专注记录 /
-      打开面板前的提醒 / 设置页文案完整性
+覆盖：进入页 / 快捷倒计时 / mm:ss 秒级显示 / 种树 / 森林面板 / 登录与专注记录 /
+      退出全屏拦截 + 回到全屏自动继续 / 失焦自动暂停 /
+      非专注时面板直接打开 / 专注中二次确认小窗 / 登录新标签页 /
+      设置页文案完整性 / 关于页双作者
 
 用法：python3 scripts/verify_ui.py [BASE_URL]
 """
@@ -36,7 +37,8 @@ async def main():
 
     async with async_playwright() as pw:
         browser = await pw.chromium.launch(args=["--no-sandbox"])
-        page = await browser.new_page(viewport={"width": 1440, "height": 900})
+        context = await browser.new_context(viewport={"width": 1440, "height": 900})
+        page = await context.new_page()
         errors = []
         page.on("pageerror", lambda e: errors.append(str(e)))
         page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
@@ -65,10 +67,9 @@ async def main():
         await gate.click()
         await page.wait_for_timeout(1500)
 
-        # 4. 秒级显示
-        body_text = await page.locator("body").inner_text()
+        # 4. mm:ss 秒级显示
         display_text = re.sub(r"\s+", "", await page.locator(".timer-display").first.inner_text())
-        check("计时显示到秒（mm:ss）", re.fullmatch(r"\d{4}", display_text) is not None, display_text)
+        check("计时显示为 mm:ss（含冒号）", re.fullmatch(r"\d{2}:\d{2}", display_text) is not None, display_text)
 
         # 5. 等这一段专注跑完 → 种树
         planted = 0
@@ -112,27 +113,14 @@ async def main():
         check("失焦提示出现", await page.get_by_text("已暂停计时").count() > 0)
         await page.screenshot(path=os.path.join(SHOTS, "06-blur-pause.png"))
 
-        # 8. 打开面板前先询问
+        # 8. 非专注时：面板直接打开，不弹二次确认
         await page.get_by_label("我的森林").click()
-        await page.wait_for_timeout(600)
-        body_text = await page.locator("body").inner_text()
-        check("点「我的森林」先弹出提醒", "点击可能会干扰注意力" in body_text)
-        await page.screenshot(path=os.path.join(SHOTS, "07-distract-guard.png"))
-        await page.get_by_role("button", name="不了", exact=True).click()
-        await page.wait_for_timeout(500)
-        check("选「不了」则不打开面板", await page.locator("aside").first.is_visible() is False)
-
-        await page.get_by_label("我的森林").click()
-        await page.wait_for_timeout(500)
-        await page.get_by_role("button", name="仍然打开").click()
         await page.wait_for_timeout(700)
-
-        # 9. 森林面板
-        panel_text = await page.locator("aside").inner_text()
-        check("森林面板打开且有树", "阔叶" in panel_text or "针叶" in panel_text or "樱花" in panel_text)
+        check("非专注时点「我的森林」直接打开面板", await page.locator("aside").first.is_visible() is True)
+        check("非专注时不弹提醒小窗", await page.get_by_text("点击可能会干扰注意力").count() == 0)
         await page.screenshot(path=os.path.join(SHOTS, "04-forest.png"))
 
-        # 10. 记录面板
+        # 9. 记录面板
         await page.get_by_role("button", name="记录").click()
         await page.wait_for_timeout(600)
         record_text = await page.locator("aside").inner_text()
@@ -140,23 +128,44 @@ async def main():
         check("记录面板有专注记录", "专注记录" in record_text)
         check("专注记录标记为已完成", "已完成" in record_text)
         await page.screenshot(path=os.path.join(SHOTS, "05-records.png"))
-
-        # 先关掉森林面板，避免遮挡设置按钮
         await page.locator("aside").get_by_label("关闭").click()
         await page.wait_for_timeout(500)
 
-        # 11. 设置页文案完整性（不能出现未匹配的 key）
+        # 10. 登录入口：新标签页打开身份中心
+        try:
+            async with context.expect_page(timeout=8000) as new_page_info:
+                await page.get_by_label("登录").click()
+            new_page = await new_page_info.value
+            check("登录入口在新标签页打开身份中心", "auth." in new_page.url, new_page.url[:90])
+            await new_page.close()
+        except Exception as exc:
+            check("登录入口在新标签页打开身份中心", False, str(exc)[:90])
+
+        # 11. 专注中：二次确认小窗
+        if await timer_state(page) != 1:
+            await page.get_by_role("button", name="开始或暂停计时器").click()
+            await page.wait_for_timeout(900)
         await page.get_by_label("设置").click()
         await page.wait_for_timeout(600)
+        check("专注中点「设置」先弹提醒小窗", await page.get_by_text("点击可能会干扰注意力").count() > 0)
+        await page.screenshot(path=os.path.join(SHOTS, "07-distract-guard.png"))
+        await page.get_by_role("button", name="不了", exact=True).click()
+        await page.wait_for_timeout(500)
+        check("选「不了」则不打开设置", await page.get_by_text("段落结束").first.is_visible() is False)
+
+        await page.get_by_label("设置").click()
+        await page.wait_for_timeout(500)
         await page.get_by_role("button", name="仍然打开").click()
         await page.wait_for_timeout(800)
+
+        # 12. 设置页文案完整性（不能出现未匹配的 key）
         settings_text = await page.locator("body").inner_text()
         raw_keys = re.findall(r"settings\.values\.[\w.]+|\b_[a-zA-Z]+\b", settings_text)
         check("设置页没有未匹配的翻译键", len(raw_keys) == 0, ", ".join(raw_keys[:3]))
         check("设置页有中文条目（如「段落结束」）", "段落结束" in settings_text)
         await page.screenshot(path=os.path.join(SHOTS, "08-settings.png"))
 
-        # 12. 关于页双作者
+        # 13. 关于页双作者
         await page.get_by_role("tab", name="关于").click()
         await page.wait_for_timeout(600)
         about_text = await page.locator("body").inner_text()

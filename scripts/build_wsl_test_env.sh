@@ -24,6 +24,7 @@ set -a
 set +a
 : "${FOCUS_BASE_URL:?配置里缺少 FOCUS_BASE_URL}"
 : "${FOCUS_HOST:?配置里缺少 FOCUS_HOST}"
+: "${AUTH_BASE_URL:?配置里缺少 AUTH_BASE_URL}"
 : "${STAGE_DIR:?配置里缺少 STAGE_DIR}"
 
 SRC="${SRC_DIR:-/srv/src}"
@@ -66,7 +67,7 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
     npm install --no-audit --no-fund
   fi
   log "构建静态站点（nuxi generate）"
-  npm run generate
+  NUXT_PUBLIC_AUTH_BASE_URL="$AUTH_BASE_URL" npm run generate
 fi
 
 # ---------------------------------------------------------------- 发布

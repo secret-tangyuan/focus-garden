@@ -3,6 +3,7 @@ import { IconAlertTriangle } from '@tabler/icons-vue'
 import { useOpenPanels } from '~~/stores/openpanels'
 
 const openPanels = useOpenPanels()
+const { confirmAccess } = usePanelAccess()
 
 /** 贴着触发按钮定位（按钮在右上角，小窗出现在它下方偏左） */
 const style = computed(() => {
@@ -40,7 +41,7 @@ const style = computed(() => {
         </button>
         <button
           class="rounded-full bg-brand-strong px-2.5 py-1.5 text-[11px] font-bold text-white transition hover:brightness-110"
-          @click="openPanels.confirm()"
+          @click="confirmAccess()"
         >
           {{ $t('focus.distract.openAnyway') }}
         </button>

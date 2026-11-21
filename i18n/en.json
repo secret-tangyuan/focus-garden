@@ -22,7 +22,8 @@
   "appbar": {
     "settings": "Open settings",
     "todo": "Open task list",
-    "garden": "My forest"
+    "garden": "My forest",
+    "login": "Sign in"
   },
   "timer": {
     "approximate": {
