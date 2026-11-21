@@ -69,14 +69,14 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      title: 'FocusTide',
+      title: '秘密小汤圆 · 专注学习',
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no' },
-        { hid: 'description', name: 'description', content: 'Modern and open-source productivity timer, right from your browser. Built to be simple.' },
-        { hid: 'keywords', name: 'keywords', content: 'pomodoro app, pomodoro, free, productivity tool, app, open-source, online timer, countdown timer, focus timer, pomodoro clock, no ads, productivity timer, todo list, task management, tomato timer, pwa' },
-        { hid: 'twitter:title', name: 'twitter:title', content: 'FocusTide' },
-        { hid: 'twitter:description', name: 'twitter:description', content: 'Modern and open-source productivity timer, right from your browser. Built to be simple.' },
+        { hid: 'description', name: 'description', content: '强制全屏的专注学习计时器：倒计时、种树、记录每一次专注。基于 FocusTide (MIT) 改造。' },
+        { hid: 'keywords', name: 'keywords', content: '专注学习, 番茄钟, 倒计时, 全屏专注, 种树, 专注记录' },
+        { hid: 'twitter:title', name: 'twitter:title', content: '秘密小汤圆 · 专注学习' },
+        { hid: 'twitter:description', name: 'twitter:description', content: '强制全屏的专注学习计时器：倒计时、种树、记录每一次专注。' },
         { hid: 'twitter:image', name: 'twitter:image', content: '/img/ogImage.png' },
         { hid: 'og:image', property: 'og:image', content: '/img/ogImage.png' },
         { hid: 'og:image:url', property: 'og:image:url', content: '/img/ogImage.png' },
@@ -107,22 +107,10 @@ export default defineNuxtConfig({
   ** Nuxt.js modules
   */
   modules: [
-    '@nuxtjs/google-fonts',
     '@pinia/nuxt',
     ['./modules/build/icon_resize', iconConfig],
-    ['modules/build/pwa', { swPath: 'serviceworker.js' }]
+    ['./modules/build/pwa', { swPath: 'serviceworker.js' }]
   ],
-
-  /*
-  ** Google Fonts
-  */
-  googleFonts: {
-    families: {
-      Lexend: [400, 700]
-    },
-    display: 'swap',
-    download: false
-  },
 
   /*
   ** Build configuration

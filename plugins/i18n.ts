@@ -51,37 +51,15 @@ export const languages : LanguageStore = {
 }
 
 const getClientLocale = () : string | undefined => {
-  if (typeof navigator === 'undefined') {
-    console.log('No navigator, defaulting to English')
-    return undefined
-  }
-
-  const navigatorLocale = navigator.language
-
-  // match ISO first
-  const matchingIsoCodes = Object.keys(languages).filter(key => languages[key].iso.toLowerCase() === navigatorLocale.toLowerCase())
-
-  if (matchingIsoCodes.length > 0) {
-    console.log(`Found matching locale: ${matchingIsoCodes[0]}`)
-    return matchingIsoCodes[0]
-  }
-
-  // then match on language keys
-  const looselyMatchingLanguages = Object.keys(languages).filter(key => navigatorLocale.toLowerCase().startsWith(key))
-  if (looselyMatchingLanguages.length > 0) {
-    console.log(`Found loosely matching locale: ${looselyMatchingLanguages[0]}`)
-    return looselyMatchingLanguages[0]
-  }
-
-  // default to English
-  return 'en'
+  // 本站默认简体中文（可在设置里切换语言）
+  return 'zh'
 }
 
 export default defineNuxtPlugin(({ vueApp, $pinia }) => {
   const i18n = createI18n({
     legacy: false,
     globalInjection: true,
-    locale: 'en',
+    locale: 'zh',
     messages
   })
 

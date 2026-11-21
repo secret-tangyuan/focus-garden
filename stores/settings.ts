@@ -87,6 +87,12 @@ export interface Settings {
     pageTitle: {
       useTickEmoji: boolean
     },
+    focus: {
+      /** 强制全屏 */
+      fullscreen: boolean,
+      /** 退出全屏时自动暂停计时 */
+      pauseOnExit: boolean
+    },
     mobile: {
       notifications: {
         sectionOver: true,
@@ -114,9 +120,9 @@ export const useSettings = defineStore('settings', {
     lang: undefined,
     visuals: {
       theme: {
-        work: [255, 107, 107],
-        shortpause: [244, 162, 97],
-        longpause: [46, 196, 182]
+        work: [187, 221, 255],
+        shortpause: [214, 240, 214],
+        longpause: [255, 231, 201]
       },
       darkMode: false
     },
@@ -166,6 +172,10 @@ export const useSettings = defineStore('settings', {
     },
     pageTitle: {
       useTickEmoji: true
+    },
+    focus: {
+      fullscreen: true,
+      pauseOnExit: true
     },
     mobile: {
       notifications: {

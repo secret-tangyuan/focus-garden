@@ -36,7 +36,7 @@ const breakingChanges: BreakingChange[] = [
   }
 ]
 
-const persistStores = ['settings', 'tasklist', 'tutorials', 'main']
+const persistStores = ['settings', 'tasklist', 'tutorials', 'main', 'garden', 'history']
 const storeResetKey = '--reset-store'
 
 /** Get the persistence key of the store by its ID */

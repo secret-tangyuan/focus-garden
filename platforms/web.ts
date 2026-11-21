@@ -5,6 +5,8 @@ import { useSettings } from '~~/stores/settings'
 import { useSchedule } from '~~/stores/schedule'
 import { useNotifications } from '~~/stores/notifications'
 import { EventType, useEvents } from '~~/stores/events'
+import { useGarden } from '~~/stores/garden'
+import { useHistory } from '~~/stores/history'
 
 interface SoundSettings {
   source: HTMLAudioElement,
@@ -16,6 +18,8 @@ export function useWeb () {
   const scheduleStore = useSchedule()
   const notificationsStore = useNotifications()
   const eventsStore = useEvents()
+  const gardenStore = useGarden()
+  const historyStore = useHistory()
   const i18n = useI18n()
 
   const state = reactive({
@@ -32,9 +36,34 @@ export function useWeb () {
     return lastEventArray.length > 0 ? lastEventArray[0] : null
   })
 
+  /** 找到最近一次「开始计时」的时间，作为本次专注的起点 */
+  const findLastStartTime = (): number => {
+    const startEvent = [...eventsStore.events].reverse().find(event => event._event === EventType.TIMER_START)
+    const timestamp = startEvent?._timestamp?.getTime()
+    return timestamp ?? (Date.now() - (scheduleStore.getSchedule[0].length ?? 0))
+  }
+
   watch(lastEvent, (newValue) => {
-    if (newValue !== null && newValue._event === EventType.TIMER_FINISH) {
+    if (newValue === null) { return }
+
+    if (newValue._event === EventType.TIMER_FINISH) {
       showNotification(scheduleStore.getSchedule[1].type)
+
+      // 完成一段专注 → 种下一棵树，并写入专注记录
+      const finishedItem = scheduleStore.getSchedule[0]
+      if (finishedItem.type === 'work') {
+        const minutes = Math.round((finishedItem.length ?? 0) / 60000)
+        gardenStore.plantTree(minutes)
+        historyStore.recordFocus(findLastStartTime(), minutes, true)
+      }
+    }
+
+    if (newValue._event === EventType.TIMER_STOP) {
+      // 中途放弃（已专注 ≥1 分钟才记录）
+      const elapsed = Math.floor((scheduleStore.getSchedule[0].timeElapsed ?? 0) / 60000)
+      if (elapsed >= 1) {
+        historyStore.recordFocus(findLastStartTime(), elapsed, false)
+      }
     }
   })
 

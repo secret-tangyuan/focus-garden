@@ -21,7 +21,8 @@
   },
   "appbar": {
     "settings": "Open settings",
-    "todo": "Open task list"
+    "todo": "Open task list",
+    "garden": "My forest"
   },
   "timer": {
     "approximate": {
@@ -370,5 +371,53 @@
       "action": "Please update your bookmark or hyperlink to focustide.app.",
       "button": "OK"
     }
+  },
+  "focus": {
+    "gate": {
+      "title": "Secret Tangyuan · Focus study",
+      "subtitle": "Full-screen focus without distractions. Finish a countdown to plant a tree.",
+      "start": "Enter full screen",
+      "skip": "Skip focus mode",
+      "startPlain": "Start focusing",
+      "forceFullscreen": "Force full screen",
+      "pauseOnExit": "Pause when leaving full screen"
+    },
+    "guard": {
+      "title": "Return to full screen to continue",
+      "strong": "Focus mode is on.",
+      "hint": "Leaving full screen pauses the timer.",
+      "back": "Back to full screen",
+      "exitHint": "Pressing Esc will not exit — use the button above."
+    },
+    "workLength": "Focus",
+    "pauseLength": "Break",
+    "minutes": "min"
+  },
+  "garden": {
+    "title": "My forest",
+    "subtitle": "Every focus session plants a tree",
+    "tabs": {
+      "forest": "Forest",
+      "records": "Records"
+    },
+    "stats": {
+      "minutes": "Total minutes",
+      "trees": "Trees",
+      "streak": "Day streak"
+    },
+    "empty": "No trees yet",
+    "emptyHint": "Finish a focus countdown to plant the first tree.",
+    "planted": "A tree was planted",
+    "total": "Total focus",
+    "weekly": "Last 7 days",
+    "logins": "Login history",
+    "focusRecords": "Focus history",
+    "noLogins": "No logins yet",
+    "noRecords": "No focus sessions yet",
+    "completed": "Completed",
+    "abandoned": "Stopped",
+    "clear": "Clear",
+    "clearConfirm": "Confirm clear?",
+    "hint": "Stored in this browser only. Clearing cannot be undone."
   }
 }

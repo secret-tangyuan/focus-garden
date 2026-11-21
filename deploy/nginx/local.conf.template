@@ -1,0 +1,35 @@
+# 专注学习站 · 本地 nginx 模板（由 scripts/build_wsl_test_env.sh 渲染）
+# 模板里的 __XXX__ 全部来自 deploy/env/*.env，不在这里写死地址。
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name __FOCUS_HOST__;
+
+    root __STAGE_DIR__/focus-garden;
+    index index.html;
+
+    gzip on;
+    gzip_min_length 1k;
+    gzip_vary on;
+    gzip_types text/css application/javascript application/json image/svg+xml;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    location ~* \.(?:css|js|mjs|wasm|woff2?|ttf|otf|webp|svg|png|jpg|jpeg|gif|ico|json)$ {
+        expires 30d;
+        add_header Cache-Control "public, max-age=2592000";
+        try_files $uri =404;
+    }
+
+    location = /index.html {
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+    }
+
+    location = /serviceworker.js {
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+        try_files $uri =404;
+    }
+}

@@ -21,7 +21,8 @@
   },
   "appbar": {
     "settings": "打开设置",
-    "todo": "打开任务列表"
+    "todo": "打开任务列表",
+    "garden": "我的森林"
   },
   "timer": {
     "approximate": {
@@ -348,5 +349,53 @@
         "support": "支持此项目"
       }
     }
+  },
+  "focus": {
+    "gate": {
+      "title": "秘密小汤圆 · 专注学习",
+      "subtitle": "全屏专注，屏蔽干扰；完成一段倒计时就能种下一棵树。",
+      "start": "进入全屏专注",
+      "skip": "暂不进入专注模式",
+      "startPlain": "开始专注",
+      "forceFullscreen": "强制全屏",
+      "pauseOnExit": "退出全屏时自动暂停"
+    },
+    "guard": {
+      "title": "请回到全屏继续专注",
+      "strong": "专注模式已开启。",
+      "hint": "退出全屏会暂停计时，回到全屏后继续。",
+      "back": "回到全屏",
+      "exitHint": "按 Esc 无法退出，请点击上方按钮。"
+    },
+    "workLength": "专注",
+    "pauseLength": "休息",
+    "minutes": "分钟"
+  },
+  "garden": {
+    "title": "我的森林",
+    "subtitle": "每一次专注都会种下一棵树",
+    "tabs": {
+      "forest": "森林",
+      "records": "记录"
+    },
+    "stats": {
+      "minutes": "累计分钟",
+      "trees": "棵树",
+      "streak": "连续天数"
+    },
+    "empty": "还没有树",
+    "emptyHint": "完成一段专注倒计时，就会在这里种下第一棵树。",
+    "planted": "种下了一棵树",
+    "total": "累计专注",
+    "weekly": "最近 7 天",
+    "logins": "登录记录",
+    "focusRecords": "专注记录",
+    "noLogins": "暂无登录记录",
+    "noRecords": "暂无专注记录",
+    "completed": "已完成",
+    "abandoned": "未完成",
+    "clear": "清空",
+    "clearConfirm": "确认清空？",
+    "hint": "数据保存在本机浏览器，清空后不可恢复。"
   }
 }

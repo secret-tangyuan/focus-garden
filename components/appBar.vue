@@ -1,5 +1,5 @@
 <script setup>
-import { IconSettings, IconChecklist } from '@tabler/icons-vue'
+import { IconSettings, IconChecklist, IconTrees } from '@tabler/icons-vue'
 import { ButtonImportance, ButtonTheme } from './base/types/button'
 import CButton from '~~/components/base/uiButton.vue'
 import ScheduleView from '@/components/schedule/scheduleDisplay.vue'
@@ -34,6 +34,19 @@ const settingsStore = useSettings()
       @click="openPanels.todo = !openPanels.todo"
     >
       <IconChecklist size="24" class="inline-block" />
+    </CButton>
+    <CButton
+      circle
+      :theme="openPanels.garden ? ButtonTheme.Primary : ButtonTheme.Neutral"
+      :importance="ButtonImportance.Tonal"
+      class="transition rounded-full h-11"
+      no-content-theme
+      no-padding
+      inner-class="p-1"
+      :aria-label="$t('appbar.garden')"
+      @click="openPanels.garden = !openPanels.garden"
+    >
+      <IconTrees size="24" class="inline-block" />
     </CButton>
     <CButton
       circle

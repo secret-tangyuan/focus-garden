@@ -17,10 +17,13 @@ import { AppPlatform } from '~~/platforms/platforms'
 import { useMobileSettings } from '~~/stores/platforms/mobileSettings'
 
 import Layout from '~/layouts/timer.vue'
+import FullscreenGuard from '~/components/focus/fullscreenGuard.vue'
+import PlantToast from '~/components/garden/plantToast.vue'
+import StartGate from '~/components/focus/startGate.vue'
+import QuickPresets from '~/components/focus/quickPresets.vue'
 
 // components
 const AppBar = defineAsyncComponent(() => import('@/components/appBar.vue'))
-const TutorialView = defineAsyncComponent(() => import('@/components/tutorial/_tutorialView.vue'))
 
 const settingsStore = useSettings()
 const mobileSettingsStore = useMobileSettings()
@@ -53,7 +56,7 @@ useHead({
     }
   ],
   meta: [
-    { name: 'theme-color', content: '#F87171' }
+    { name: 'theme-color', content: '#bbddff' }
   ]
 })
 
@@ -123,8 +126,8 @@ const progressBarSchedules = computed(() => {
   <Layout>
     <section class="h-full overflow-hidden duration-300 ease-in dark:text-gray-50">
       <Title>{{ (remainingTimeString ? `(${remainingTimeString}) ` : '') + pageTitle }}</Title>
-      <!-- Dark mode background override -->
-      <div class="absolute w-full h-full dark:bg-gray-900" />
+      <!-- 背景：纯色 + 格子 -->
+      <div class="absolute w-full h-full bg-[#f7fafc] dark:bg-[#151b23] grid-bg" />
       <!-- Progress bar -->
       <TransitionGroup name="progress-transition" :duration="1000">
         <TimerProgress
@@ -154,11 +157,12 @@ const progressBarSchedules = computed(() => {
           class="flex-grow"
           @tick="state.timeString = $event"
         />
+        <QuickPresets class="mb-6" />
         <TimerControls class="mb-8" />
       </div>
-      <client-only>
-        <TutorialView />
-      </client-only>
+      <FullscreenGuard />
+      <PlantToast />
+      <StartGate />
     </section>
   </Layout>
 </template>
@@ -194,5 +198,24 @@ const progressBarSchedules = computed(() => {
 <style>
 body {
   overscroll-behavior-y: contain;
+}
+
+/* 纯色背景 + 格子 */
+.grid-bg {
+  background-image:
+    linear-gradient(to right, rgba(31, 45, 61, 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(31, 45, 61, 0.045) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+/* 计时进度色块：半透明，露出格子底 */
+.timer-progress {
+  opacity: 0.55;
+}
+
+.dark .grid-bg {
+  background-image:
+    linear-gradient(to right, rgba(187, 221, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(187, 221, 255, 0.05) 1px, transparent 1px);
 }
 </style>

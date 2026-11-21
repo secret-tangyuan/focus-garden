@@ -11,11 +11,23 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        display: ['Lexend', 'sans-serif'],
-        body: ['Lexend', 'sans-serif'],
-        sans: ['Lexend', 'sans-serif']
+        display: ['"PingFang SC"', '"HarmonyOS Sans SC"', '"Microsoft YaHei"', 'system-ui', 'sans-serif'],
+        body: ['"PingFang SC"', '"HarmonyOS Sans SC"', '"Microsoft YaHei"', 'system-ui', 'sans-serif'],
+        sans: ['"PingFang SC"', '"HarmonyOS Sans SC"', '"Microsoft YaHei"', 'system-ui', 'sans-serif']
       },
       colors: {
+        /* 站群主色：bbddff */
+        brand: {
+          DEFAULT: '#bbddff',
+          strong: '#2f6fd0',
+          ink: '#16324f'
+        },
+        /* 站群主色：bbddff */
+        brand: {
+          DEFAULT: '#bbddff',
+          strong: '#2f6fd0',
+          ink: '#16324f'
+        },
         /* derived from Material Theme Builder - seeds:
         - primary: #F77272
         - secondary: #72F798
@@ -62,10 +74,10 @@ module.exports = {
           darkcontainer: '#93000a',
           ondarkcontainer: '#ffdad6'
         },
-        work: '#FF6B6B',
-        shortpause: '#F4A261',
-        longpause: '#2EC4B6',
-        theme: '#F87171',
+        work: '#bbddff',
+        shortpause: '#d6f0d6',
+        longpause: '#ffe7c9',
+        theme: '#bbddff',
         themed: 'rgb(var(--theme) / <alpha-value>)'
       }
     }

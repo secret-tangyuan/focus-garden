@@ -3,8 +3,12 @@ import { IconPlayerPlay, IconPlayerPause, IconPlayerStop, IconPlayerTrackNext } 
 import { ButtonImportance, ButtonTheme } from '~~/components/base/types/button'
 import CButton from '~~/components/base/uiButton.vue'
 import { TimerState, useSchedule } from '~~/stores/schedule'
+import { useFocusMode } from '~~/stores/focusMode'
+import { useHistory } from '~~/stores/history'
 
 const scheduleStore = useSchedule()
+const focusMode = useFocusMode()
+const history = useHistory()
 
 const reset = () => {
   if (scheduleStore.timerState !== TimerState.COMPLETED && scheduleStore.getSchedule[0].timeElapsed > scheduleStore.getSchedule[0].length) {
@@ -14,8 +18,21 @@ const reset = () => {
   }
 }
 
-const playPause = () => {
-  scheduleStore.timerState = scheduleStore.timerState === TimerState.RUNNING ? TimerState.PAUSED : TimerState.RUNNING
+const playPause = async () => {
+  // 暂停 / 继续
+  if (scheduleStore.timerState === TimerState.RUNNING) {
+    scheduleStore.timerState = TimerState.PAUSED
+    return
+  }
+
+  // 开始专注：先计时，再请求全屏（请求失败也不影响计时）
+  history.recordLogin()
+  scheduleStore.timerState = TimerState.RUNNING
+
+  if (focusMode.enabled && !focusMode.isFullscreen) {
+    focusMode.entered = true
+    focusMode.requestFullscreen()
+  }
 }
 
 const advance = () => {
