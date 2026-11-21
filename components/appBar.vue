@@ -1,16 +1,34 @@
 <script setup>
-import { IconSettings, IconChecklist, IconTrees, IconLogin } from '@tabler/icons-vue'
+import { IconSettings, IconChecklist, IconTrees, IconLogin, IconMaximizeOff } from '@tabler/icons-vue'
 import { ButtonImportance, ButtonTheme } from './base/types/button'
 import CButton from '~~/components/base/uiButton.vue'
 import ScheduleView from '@/components/schedule/scheduleDisplay.vue'
 import { useOpenPanels } from '@/stores/openpanels'
-import { useSchedule } from '~~/stores/schedule'
+import { TimerState, useSchedule } from '~~/stores/schedule'
 import { useSettings } from '~~/stores/settings'
+import { useAuth } from '~~/stores/auth'
+import { useFocusMode } from '~~/stores/focusMode'
 
 const openPanels = useOpenPanels()
 const auth = useAuth()
-const { requestAccess } = usePanelAccess()
 const scheduleStore = useSchedule()
+const focusMode = useFocusMode()
+
+/** 只有在专注中（计时在跑或已进全屏）才显示「暂停并退出」 */
+const showExitFocus = computed(() =>
+  scheduleStore.timerState === TimerState.RUNNING || focusMode.isFullscreen
+)
+
+/** 暂停计时并退出全屏：直接执行，不做二次确认 */
+const pauseAndExit = async () => {
+  if (scheduleStore.timerState === TimerState.RUNNING) {
+    scheduleStore.timerState = TimerState.PAUSED
+  }
+  // 不标记成「因退出全屏而暂停」：回来后不要自动继续
+  focusMode.clearPausedByExit()
+  await focusMode.exitFullscreen()
+}
+const { requestAccess } = usePanelAccess()
 const settingsStore = useSettings()
 </script>
 
@@ -37,6 +55,15 @@ const settingsStore = useSettings()
     >
       <IconChecklist size="24" class="inline-block" />
     </CButton>
+    <button
+      v-if="showExitFocus"
+      class="flex shrink-0 items-center gap-1.5 rounded-full bg-white/75 px-3 py-2 text-xs font-bold text-slate-600 shadow-sm transition hover:bg-white hover:text-slate-900"
+      :aria-label="$t('focus.exit.label')"
+      @click="pauseAndExit"
+    >
+      <IconMaximizeOff :size="16" />
+      <span class="hidden md:inline">{{ $t('focus.exit.text') }}</span>
+    </button>
     <CButton
       v-if="auth.identityReady"
       circle

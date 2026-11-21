@@ -430,6 +430,10 @@
       "stay": "No, keep focusing",
       "stayShort": "No",
       "openAnyway": "Open anyway"
+    },
+    "exit": {
+      "label": "Pause the timer and leave full screen",
+      "text": "Pause & exit"
     }
   },
   "garden": {

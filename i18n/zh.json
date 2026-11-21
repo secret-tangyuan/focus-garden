@@ -424,6 +424,10 @@
       "stay": "不了，继续专注",
       "stayShort": "不了",
       "openAnyway": "仍然打开"
+    },
+    "exit": {
+      "label": "暂停计时并退出全屏",
+      "text": "暂停并退出"
     }
   },
   "garden": {

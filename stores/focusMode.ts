@@ -66,7 +66,11 @@ export const useFocusMode = defineStore('focusMode', {
       }
     },
 
-    /** 退出全屏（用户主动退出专注模式时使用） */
+    /**
+     * 退出全屏（用户主动「暂停并退出」时使用）。
+     * 注意：不清掉 entered —— 退出全屏不等于回到入口页，
+     * 否则「暂停并退出」会把入口页重新盖上来。
+     */
     async exitFullscreen () {
       if (!import.meta.client) { return }
       if (document.fullscreenElement) {
@@ -83,7 +87,6 @@ export const useFocusMode = defineStore('focusMode', {
       }
       this.isFullscreen = false
       this.blocked = false
-      this.entered = false
     },
 
     /** 同步 fullscreenchange 事件的状态 */
