@@ -472,6 +472,8 @@
     "full": "Register / forgot password (full page)",
     "fullPage": "Open the full sign-in page",
     "again": "Sign in again",
-    "expired": "Your session expired, please sign in again"
+    "expired": "Your session expired, please sign in again",
+    "hintBefore": "For a long-lived session, registration and the full feature set, visit the",
+    "hintLink": "main sign-in page"
   }
 }

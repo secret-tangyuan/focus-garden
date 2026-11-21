@@ -119,20 +119,16 @@ const openFullLogin = () => {
         </button>
       </form>
 
-      <button
-        class="mt-2 flex w-full items-center justify-center gap-1.5 rounded-full border border-slate-200 px-4 py-2 text-[11px] font-bold text-slate-600 transition hover:border-brand-strong hover:text-brand-strong"
-        @click="openFullLogin"
-      >
-        <IconExternalLink :size="13" />
-        {{ $t('login.fullPage') }}
-      </button>
-
-      <button
-        class="mt-1 w-full text-center text-[11px] text-slate-400 underline-offset-4 transition hover:text-slate-600 hover:underline"
-        @click="openFullLogin"
-      >
-        {{ $t('login.full') }}
-      </button>
+      <p class="mt-2.5 text-center text-[11px] leading-relaxed text-slate-400">
+        {{ $t('login.hintBefore') }}
+        <button
+          class="inline-flex items-center gap-0.5 font-bold text-brand-strong underline-offset-4 transition hover:underline"
+          @click="openFullLogin"
+        >
+          {{ $t('login.hintLink') }}
+          <IconExternalLink :size="11" />
+        </button>
+      </p>
     </div>
 
     <!-- 已登录提示 -->

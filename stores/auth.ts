@@ -22,6 +22,7 @@ let renewTimer: ReturnType<typeof setTimeout> | null = null
 /** 上次续签的时间 */
 let lastRenewAt = 0
 
+
 export const useAuth = defineStore('auth', {
   state: () => ({
     /** 精简版登录面板是否打开 */
@@ -41,7 +42,7 @@ export const useAuth = defineStore('auth', {
     /** 会话是否已过期（续签失败） */
     expired: false,
     /** 当前会话类型：tmp=短效（可续签） / sso=长期（不续，自然过期） */
-    scope: ''
+    scope: '',
   }),
 
   getters: {
