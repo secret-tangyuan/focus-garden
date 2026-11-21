@@ -96,3 +96,7 @@ sw.*
 
 # Build output of modules
 .build
+
+# 地址配置（每个环境一份，只提交 .example）
+deploy/env/*.env
+!deploy/env/*.env.example

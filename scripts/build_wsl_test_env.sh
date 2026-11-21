@@ -26,6 +26,7 @@ set +a
 : "${FOCUS_HOST:?配置里缺少 FOCUS_HOST}"
 : "${AUTH_BASE_URL:?配置里缺少 AUTH_BASE_URL}"
 : "${BACKEND_ORIGIN:?配置里缺少 BACKEND_ORIGIN}"
+: "${AUTH_PROXY_PREFIX:?配置里缺少 AUTH_PROXY_PREFIX}"
 : "${STAGE_DIR:?配置里缺少 STAGE_DIR}"
 
 SRC="${SRC_DIR:-/srv/src}"
@@ -84,6 +85,7 @@ sed -e "s#__FOCUS_HOST__#$FOCUS_HOST#g" \
     -e "s#__STAGE_DIR__#$STAGE#g" \
     -e "s#__FOCUS_BASE_URL__#$FOCUS_BASE_URL#g" \
     -e "s#__BACKEND_ORIGIN__#$BACKEND_ORIGIN#g" \
+    -e "s#__AUTH_PROXY_PREFIX__#$AUTH_PROXY_PREFIX#g" \
     "$TPL" > /tmp/$NAME.conf
 sudo -n install -o root -g root -m 644 /tmp/$NAME.conf /etc/nginx/sites-available/$NAME.conf
 sudo -n ln -sf /etc/nginx/sites-available/$NAME.conf /etc/nginx/sites-enabled/$NAME.conf

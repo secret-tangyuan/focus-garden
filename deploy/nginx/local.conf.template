@@ -14,14 +14,37 @@ server {
     gzip_vary on;
     gzip_types text/css application/javascript application/json image/svg+xml;
 
-    # 统一身份接口：同源反代，站内精简登录直接调 /auth/login
-    location ^~ /auth/ {
-        proxy_pass __BACKEND_ORIGIN__/auth/;
+    # 统一身份接口：只放行必要的三个路径（登录 / 会话 / 退出），
+    # 其余 __AUTH_PROXY_PREFIX__/* 一律 404，外部看不到身份中心的其它接口。
+    location = __AUTH_PROXY_PREFIX__/login {
+        proxy_pass __BACKEND_ORIGIN__/auth/login;
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-Host $host;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    location = __AUTH_PROXY_PREFIX__/session {
+        proxy_pass __BACKEND_ORIGIN__/auth/session;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    location = __AUTH_PROXY_PREFIX__/logout {
+        proxy_pass __BACKEND_ORIGIN__/auth/logout;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    location __AUTH_PROXY_PREFIX__/ {
+        return 404;
     }
 
     location / {

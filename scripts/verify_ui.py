@@ -136,16 +136,27 @@ async def main():
         await page.wait_for_timeout(500)
 
         # 10. 精简版登录（站内面板，同源走 nginx 反代）
+        # 账号口令从环境变量传，仓库里不写任何真实凭据：
+        #   FOCUS_TEST_USER / FOCUS_TEST_PASSWORD
+        if not os.environ.get("FOCUS_TEST_USER") or not os.environ.get("FOCUS_TEST_PASSWORD"):
+            print("  SKIP  精简版登录（未设置 FOCUS_TEST_USER / FOCUS_TEST_PASSWORD）")
+            await page.get_by_label("登录").first.click()
+            await page.wait_for_timeout(500)
+            await page.keyboard.press("Escape")
+            login_ok = None
+        else:
+            login_ok = True
         await page.get_by_label("登录").first.click()
         await page.wait_for_timeout(700)
         check("点「登录」打开站内精简登录面板", await page.get_by_text("统一身份 · 专注学习站").count() > 0)
-        await page.get_by_label("用户名").fill("admin")
-        await page.get_by_label("密码").fill("Local-Admin-Test-2026!")
-        await page.locator("form").get_by_role("button", name="登录").click()
-        await page.wait_for_timeout(2500)
-        check("精简版登录成功（提示已登录）", await page.get_by_text("已登录").count() > 0)
-        check("登录失败没有误报", await page.get_by_text("用户名或密码错误").count() == 0)
-        await page.screenshot(path=os.path.join(SHOTS, "10-login.png"))
+        if login_ok is not None:
+            await page.get_by_label("用户名").fill(os.environ["FOCUS_TEST_USER"])
+            await page.get_by_label("密码").fill(os.environ["FOCUS_TEST_PASSWORD"])
+            await page.locator("form").get_by_role("button", name="登录").click()
+            await page.wait_for_timeout(2500)
+            check("精简版登录成功（提示已登录）", await page.get_by_text("已登录").count() > 0)
+            check("登录失败没有误报", await page.get_by_text("用户名或密码错误").count() == 0)
+            await page.screenshot(path=os.path.join(SHOTS, "10-login.png"))
 
         # 11. 专注中：二次确认小窗
         if await timer_state(page) != 1:

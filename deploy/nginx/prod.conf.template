@@ -1,0 +1,94 @@
+# 专注学习站 · 生产 nginx（由 deploy/env/prod.env 渲染）
+# 占位符全部来自 deploy/env/prod.env，模板里不写死域名。
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name __FOCUS_HOST__;
+
+    root __SITE_ROOT__;
+    index index.html;
+
+    # HTTP → HTTPS
+    location /.well-known/acme-challenge/ { root /var/www/html; }
+    location / { return 301 https://__FOCUS_HOST__$request_uri; }
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+    server_name __FOCUS_HOST__;
+
+    ssl_certificate __SSL_CERT__;
+    ssl_certificate_key __SSL_KEY__;
+
+    root __SITE_ROOT__;
+    index index.html;
+
+    gzip on;
+    gzip_min_length 1k;
+    gzip_vary on;
+    gzip_types text/css application/javascript application/json image/svg+xml;
+
+    # 安全响应头：静态站 + 同源身份接口，可以收得很紧
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "geolocation=(), microphone=(), camera=(), interest-cohort=()" always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" always;
+
+    # 统一身份接口：只放行必要的三个路径，其余一律 404
+    location = __AUTH_PROXY_PREFIX__/login {
+        proxy_pass __BACKEND_ORIGIN__/auth/login;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    location = __AUTH_PROXY_PREFIX__/session {
+        proxy_pass __BACKEND_ORIGIN__/auth/session;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    location = __AUTH_PROXY_PREFIX__/logout {
+        proxy_pass __BACKEND_ORIGIN__/auth/logout;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    location __AUTH_PROXY_PREFIX__/ {
+        return 404;
+    }
+
+    # 带指纹的静态资源：长期缓存
+    location ~* ^/_nuxt/.*\.(?:js|mjs|css|woff2?|ttf|otf|png|svg|webp|jpg|jpeg)$ {
+        expires 1y;
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+        try_files $uri =404;
+    }
+
+    # PWA 的 service worker 不缓存
+    location = /serviceworker.js {
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+        try_files $uri =404;
+    }
+
+    # 外壳不缓存，保证更新即时生效
+    location = /index.html {
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+    }
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
