@@ -469,6 +469,9 @@
     "submit": "Sign in",
     "submitting": "Signing in…",
     "welcome": "Signed in",
-    "full": "Register / forgot password (full page)"
+    "full": "Register / forgot password (full page)",
+    "fullPage": "Open the full sign-in page",
+    "again": "Sign in again",
+    "expired": "Your session expired, please sign in again"
   }
 }

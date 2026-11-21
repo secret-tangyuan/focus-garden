@@ -10,6 +10,12 @@ export interface SessionUser {
   must_change_pw?: boolean
 }
 
+/** 续签间隔（毫秒） */
+const RENEW_INTERVAL = 20 * 60 * 1000
+
+/** 续签定时器 */
+let renewTimer: ReturnType<typeof setTimeout> | null = null
+
 export const useAuth = defineStore('auth', {
   state: () => ({
     /** 精简版登录面板是否打开 */
@@ -25,7 +31,9 @@ export const useAuth = defineStore('auth', {
     /** 请求中 */
     busy: false,
     /** 已检查过会话 */
-    checked: false
+    checked: false,
+    /** 会话是否已过期（续签失败） */
+    expired: false
   }),
 
   getters: {
@@ -40,6 +48,51 @@ export const useAuth = defineStore('auth', {
   },
 
   actions: {
+    /** 自动续签：短效会话每 20 分钟续一次（免密） */
+    scheduleRenew (scope: string) {
+      if (renewTimer) {
+        clearTimeout(renewTimer)
+        renewTimer = null
+      }
+      if (scope !== 'tmp') { return }
+
+      const endpoint = String(useRuntimeConfig().public.IDENTITY_API_RENEW || '')
+      if (!endpoint) { return }
+
+      renewTimer = setTimeout(() => { void this.renew() }, RENEW_INTERVAL)
+    },
+
+    /** 续签一次短效会话 */
+    async renew () {
+      const endpoint = String(useRuntimeConfig().public.IDENTITY_API_RENEW || '')
+      if (!endpoint) { return false }
+
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { Accept: 'application/json' },
+          credentials: 'include'
+        })
+
+        if (response.status === 401) {
+          this.authenticated = false
+          this.user = null
+          this.expired = true
+          return false
+        }
+
+        const data = await response.json().catch(() => ({}))
+        if (!response.ok || !data.ok) { return false }
+
+        this.expired = false
+        this.scheduleRenew(String(data.scope || 'tmp'))
+        return true
+      } catch (err) {
+        console.warn('renew failed', err)
+        return false
+      }
+    },
+
     openLogin (rect?: { top: number, right: number, bottom: number, left: number } | null) {
       this.error = ''
       this.loginRect = rect ?? null
@@ -66,6 +119,10 @@ export const useAuth = defineStore('auth', {
         const data = await response.json()
         this.authenticated = !!data.authenticated
         this.user = data.authenticated ? data.user : null
+        this.expired = false
+        if (this.authenticated) {
+          this.scheduleRenew(String(data.scope || ''))
+        }
       } catch (err) {
         console.warn('session check failed', err)
       } finally {
@@ -125,6 +182,7 @@ export const useAuth = defineStore('auth', {
         }
 
         await this.fetchSession()
+        this.scheduleRenew('tmp')
         this.loginOpen = false
         return true
       } catch (err) {

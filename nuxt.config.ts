@@ -59,7 +59,9 @@ export default defineNuxtConfig({
       IDENTITY_BASE_URL: '',
       IDENTITY_API_LOGIN: '',
       IDENTITY_API_SESSION: '',
-      IDENTITY_API_LOGOUT: ''
+      IDENTITY_API_LOGOUT: '',
+      /** 短效会话的续签端点（留空则不自动续签） */
+      IDENTITY_API_RENEW: ''
     }
   },
 

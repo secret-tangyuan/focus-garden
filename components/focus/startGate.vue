@@ -57,7 +57,7 @@ const skip = () => {
           @click="requestAccess('login', $event.currentTarget.getBoundingClientRect())"
         >
           <IconLogin :size="16" />
-          {{ auth.authenticated ? auth.displayName : $t('appbar.login') }}
+          {{ auth.authenticated ? auth.displayName : (auth.expired ? $t('login.again') : $t('appbar.login')) }}
         </button>
       </div>
 
