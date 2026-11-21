@@ -39,7 +39,9 @@ export const useAuth = defineStore('auth', {
     /** 已检查过会话 */
     checked: false,
     /** 会话是否已过期（续签失败） */
-    expired: false
+    expired: false,
+    /** 当前会话类型：tmp=短效（可续签） / sso=长期（不续，自然过期） */
+    scope: ''
   }),
 
   getters: {
@@ -81,17 +83,23 @@ export const useAuth = defineStore('auth', {
       renewTimer = setTimeout(() => { void this.renew() }, delay)
     },
 
-    /** 从后台切回前台：会话快过期时立刻续一次 */
+    /** 从后台切回前台：会话快过期时立刻续一次（长期会话跳过） */
     async renewIfStale () {
       if (!this.authenticated) { return }
+      if (this.scope && this.scope !== 'tmp') { return }
       if (Date.now() - lastRenewAt < RENEW_MIN_GAP) { return }
       await this.renew()
     },
 
-    /** 续签一次短效会话 */
+    /**
+     * 续签：
+     * - 手里是短期会话 → 往后延（滑动续期）
+     * - 手里是长期会话 → 给本站换一张短期的，长期的那张不碰、让它自然过期
+     */
     async renew () {
       const endpoint = String(useRuntimeConfig().public.IDENTITY_API_RENEW || '')
       if (!endpoint) { return false }
+      if (!this.authenticated) { return false }
 
       try {
         const response = await fetch(endpoint, {
@@ -111,8 +119,9 @@ export const useAuth = defineStore('auth', {
         if (!response.ok || !data.ok) { return false }
 
         this.expired = false
+        this.scope = String(data.scope || 'tmp')
         lastRenewAt = Date.now()
-        this.scheduleRenew(String(data.scope || 'tmp'), Number(data.expires_at || 0) || undefined)
+        this.scheduleRenew(this.scope, Number(data.expires_at || 0) || undefined)
         return true
       } catch (err) {
         console.warn('renew failed', err)
@@ -147,9 +156,17 @@ export const useAuth = defineStore('auth', {
         this.authenticated = !!data.authenticated
         this.user = data.authenticated ? data.user : null
         this.expired = false
+        this.scope = this.authenticated ? String(data.scope || '') : ''
         if (this.authenticated) {
           lastRenewAt = Date.now()
-          this.scheduleRenew(String(data.scope || ''), Number(data.expires_at || 0) || undefined)
+          this.scope = String(data.scope || '')
+
+          if (this.scope === 'sso') {
+            // 长期会话：在本站换一张短期的（长期的那张保持不动，自然过期）
+            void this.renew()
+          } else {
+            this.scheduleRenew(this.scope, Number(data.expires_at || 0) || undefined)
+          }
         }
       } catch (err) {
         console.warn('session check failed', err)
