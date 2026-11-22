@@ -393,6 +393,33 @@ async def main():
         }""")
         await page.get_by_role("tab", name="显示").click()
         await page.wait_for_timeout(500)
+
+        # 12a. 计时器风格仍可选择（默认秒表，粗略 / 百分比保留）
+        check("设置保留计时器风格选项", await page.get_by_text("计时器风格").count() > 0)
+        await page.evaluate("""() => {
+          const app = document.querySelector('#__nuxt').__vue_app__
+          const st = app.config.globalProperties.$pinia._s.get('settings')
+          const sc = app.config.globalProperties.$pinia._s.get('schedule')
+          st.currentTimer = 'approximate'
+          sc.items[0].type = 'shortpause'
+          sc.lockInfo({ index: 0, length: 90 * 60 * 1000, type: 'shortpause' })
+          sc.items[0].timeElapsed = 0
+        }""")
+        await page.wait_for_timeout(700)
+        approx_text = re.sub(r"\s+", "", await page.locator(".timer-display").first.inner_text())
+        check("粗略模式 90 分钟显示 1 小时 30 分钟",
+              "30分钟" in approx_text and "2小时" not in approx_text, approx_text)
+        await page.evaluate("""() => {
+          const app = document.querySelector('#__nuxt').__vue_app__
+          const st = app.config.globalProperties.$pinia._s.get('settings')
+          const sc = app.config.globalProperties.$pinia._s.get('schedule')
+          st.currentTimer = 'traditional'
+          sc.items[0].type = 'work'
+          sc.lockInfo({ index: 0, length: 600000, type: 'work' })
+          sc.items[0].timeElapsed = 0
+        }""")
+        await page.wait_for_timeout(400)
+
         await page.get_by_test_id("system-clock-button").click()
         await page.wait_for_timeout(600)
         clock_text = await page.get_by_test_id("system-clock-value").inner_text()

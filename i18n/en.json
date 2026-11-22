@@ -107,8 +107,8 @@
         "_description": ""
       },
       "currentTimer": {
-        "_title": "Break timer style",
-        "_description": "Work sections always show MM:SS seconds",
+        "_title": "Timer style",
+        "_description": "Focus always shows hours, minutes and seconds; breaks use the style chosen here",
         "_values": {
           "traditional": "Traditional",
           "approximate": "Approximate",

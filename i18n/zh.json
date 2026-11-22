@@ -27,8 +27,9 @@
   },
   "timer": {
     "approximate": {
-      "hours": "时 | 时",
-      "minutes": "分 | 分"
+      "hours": "小时 | 小时",
+      "minutes": "分 | 分",
+      "hoursMinutes": "{m} 分钟"
     }
   },
   "settings": {
@@ -107,8 +108,8 @@
         "_description": ""
       },
       "currentTimer": {
-        "_title": "休息计时器风格",
-        "_description": "专注工作段始终显示 MM:SS 秒数",
+        "_title": "计时器风格",
+        "_description": "专注时固定显示时分秒；休息时用这里选的样式",
         "_values": {
           "traditional": "传统",
           "approximate": "粗略",

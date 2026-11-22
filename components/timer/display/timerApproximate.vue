@@ -16,8 +16,13 @@ const time = computed(() => {
     string: ''
   }
   if (Math.abs(remainingMinutes) > 59) {
-    timeObject.value = remainingMinutes >= 0 ? Math.round(remainingMinutes / 60) : Math.ceil(remainingMinutes / 60)
-    timeObject.string = t('timer.approximate.hours', timeObject.value)
+    // 90 分钟应显示「1 小时 30 分钟」，不能四舍五入成「2 小时」
+    const hours = Math.floor(Math.abs(remainingMinutes) / 60)
+    const rest = Math.round(Math.abs(remainingMinutes) - hours * 60)
+    timeObject.value = remainingMinutes >= 0 ? hours : -hours
+    timeObject.string = rest > 0
+      ? t('timer.approximate.hoursMinutes', { m: rest })
+      : t('timer.approximate.hours', hours)
   } else {
     timeObject.value = remainingMinutes > 0 ? Math.ceil(remainingMinutes) : Math.min(-1, Math.floor(remainingMinutes))
     timeObject.string = t('timer.approximate.minutes', timeObject.value)
