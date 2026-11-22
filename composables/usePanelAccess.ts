@@ -1,5 +1,6 @@
 import { useOpenPanels, type PanelName, type TriggerRect } from '~~/stores/openpanels'
 import { TimerState, useSchedule } from '~~/stores/schedule'
+import { Section } from '~~/stores/settings'
 import { useAuth } from '~~/stores/auth'
 
 export type AccessTarget = PanelName | 'login'
@@ -15,8 +16,21 @@ export function usePanelAccess () {
   const auth = useAuth()
   const runtimeConfig = useRuntimeConfig()
 
-  /** 专注进行中 */
-  const isFocusing = computed(() => scheduleStore.timerState === TimerState.RUNNING)
+  /**
+   * 「专注进行中」= 计时器在跑 且 当前段是 work 段。
+   *
+   * 判定来源：scheduleStore.currentSectionType
+   * - 开始计时时由 lockInfo 锁定（components/ticker.ts）
+   * - Skip 模式推进时由 scheduleStore.advance() 锁定（stores/schedule.ts）
+   * - 暂停 / 停止 / 未开始 → timerState 不是 RUNNING → 不提示
+   * - 休息段（shortpause / longpause）→ 不提示
+   *
+   * 取不到类型时一律当作「不是专注」：宁可少弹一次提示，也不要在休息段误弹。
+   */
+  const isFocusing = computed(() => {
+    if (scheduleStore.timerState !== TimerState.RUNNING) { return false }
+    return scheduleStore.currentSectionType === Section.work
+  })
 
   /** 身份中心地址（构建期注入，不写死域名） */
   const authBaseUrl = computed(() => String(runtimeConfig.public.AUTH_BASE_URL || '').replace(/\/$/, ''))

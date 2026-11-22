@@ -32,6 +32,43 @@ def timer_state(page):
     }""")
 
 
+def set_section(page, section_type, running=True):
+    """把当前计时段强制成 work / shortpause / longpause，并设置计时器状态"""
+    return page.evaluate("""([type, running]) => {
+      const app = document.querySelector('#__nuxt').__vue_app__
+      const s = app.config.globalProperties.$pinia.state.value.schedule
+      s.items[0].type = type
+      s.timerState = running ? 1 : 0
+      return s.items[0].type
+    }""", [section_type, running])
+
+
+def close_panels(page):
+    """直接关掉所有面板（设置面板是全屏遮罩，会挡住后续点击）"""
+    return page.evaluate("""() => {
+      const app = document.querySelector('#__nuxt').__vue_app__
+      const o = app.config.globalProperties.$pinia.state.value.openpanels
+      o.settings = false
+      o.todo = false
+      o.garden = false
+      o.pending = null
+      o.pendingRect = null
+      return true
+    }""")
+
+
+def long_sections(page):
+    """把各段时长拉长，避免断言期间自动推进到下一段"""
+    return page.evaluate("""() => {
+      const app = document.querySelector('#__nuxt').__vue_app__
+      const st = app.config.globalProperties.$pinia.state.value.settings
+      st.schedule.lengths.work = 600000
+      st.schedule.lengths.shortpause = 600000
+      st.schedule.lengths.longpause = 600000
+      return true
+    }""")
+
+
 async def main():
     from playwright.async_api import async_playwright
 
@@ -118,6 +155,7 @@ async def main():
         await page.screenshot(path=os.path.join(SHOTS, "06-blur-pause.png"))
 
         # 8. 非专注时：面板直接打开，不弹二次确认
+        await set_section(page, "work", running=False)
         await page.get_by_label("我的森林").click()
         await page.wait_for_timeout(700)
         check("非专注时点「我的森林」直接打开面板", await page.locator("aside").first.is_visible() is True)
@@ -162,6 +200,9 @@ async def main():
         if await timer_state(page) != 1:
             await page.get_by_role("button", name="开始或暂停计时器").click()
             await page.wait_for_timeout(900)
+        await long_sections(page)
+        await set_section(page, "work", running=True)
+        await page.wait_for_timeout(300)
         await page.get_by_label("设置").click()
         await page.wait_for_timeout(600)
         check("专注中点「设置」先弹提醒小窗", await page.get_by_text("点击可能会干扰注意力").count() > 0)
@@ -174,6 +215,7 @@ async def main():
         await page.wait_for_timeout(500)
         await page.get_by_role("button", name="仍然打开").click()
         await page.wait_for_timeout(800)
+
 
         # 12. 设置页文案完整性（不能出现未匹配的 key）
         settings_text = await page.locator("body").inner_text()
@@ -189,6 +231,23 @@ async def main():
         check("关于页显示双作者（秘密小汤圆 + FocusTide）",
               "秘密小汤圆" in about_text and "FocusTide" in about_text)
         await page.screenshot(path=os.path.join(SHOTS, "09-about.png"))
+
+        # 11b. 休息段（短休 / 长休）：点「设置」直接打开，不弹「可能干扰专注」
+        for section_type, label in (("shortpause", "短休"), ("longpause", "长休")):
+            await close_panels(page)
+            await long_sections(page)
+            await set_section(page, section_type, running=True)
+            await page.wait_for_timeout(300)
+            await page.get_by_label("设置").click()
+            await page.wait_for_timeout(700)
+            check(f"{label}段点「设置」不弹干扰提示",
+                  await page.get_by_text("点击可能会干扰注意力").count() == 0)
+            check(f"{label}段点「设置」直接打开面板",
+                  await page.locator("section.fixed.z-\[97\]").count() > 0
+                  or await page.locator("aside").count() > 0)
+            await page.screenshot(path=os.path.join(SHOTS, f"20-break-{section_type}-no-distract.png"))
+            await close_panels(page)
+            await page.wait_for_timeout(400)
 
         fatal = [e for e in errors if "favicon" not in e.lower() and "404" not in e]
         check("无前端报错", len(fatal) == 0, "; ".join(fatal[:3]))

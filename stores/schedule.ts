@@ -64,8 +64,22 @@ export const useSchedule = defineStore('schedule', {
       return scheduleTypes
     },
 
-    /** Getter to retrieve schedule with all necessary information filled in */
-    getSchedule (state): ScheduleEntryComplete[] {
+    /**
+     * 当前计时段的类型（廉价版 getCurrentItem.type）
+     * - 不做 JSON 深拷贝（getSchedule 每次访问都会整份复制一遍）
+     * - null 安全
+     * - 优先用锁定值；没有锁定值时按 schedule 规则推导（与 getSchedule 一致）
+     */
+    currentSectionType (state): Section | null {
+      const first = state.items[0]
+      if (!first) { return null }
+      if (first.type) { return first.type }
+      const types = this.scheduleTypes
+      if (!types.length) { return null }
+      return (types[first.id % types.length] as Section) ?? null
+    },
+
+    /** Getter to retrieve schedule with all necessary information filled in */    getSchedule (state): ScheduleEntryComplete[] {
       const settings = useSettings()
       const scheduleSettings = settings.schedule
       const numEntities = scheduleSettings.numScheduleEntries
@@ -149,10 +163,24 @@ export const useSchedule = defineStore('schedule', {
   },
 
   actions: {
+    /**
+     * 按当前 schedule 规则推导某个 id 的段类型。
+     * 必须与 getSchedule 里的推导保持一致（scheduleTypes[id % len]）。
+     */
+    derivedTypeFor (id: number): Section {
+      const types = this.scheduleTypes
+      if (types.length === 0) { return Section.work }
+      return (types[id % types.length] as Section) ?? Section.work
+    },
+
     /** Advances the schedule by removing the first item and adding a new one to the end */
     advance () {
       this.items = this.items.slice(1)
       this.items.push(createScheduleEntry(this.items.length > 0 ? this.items.slice(-1)[0].id + 1 : 0))
+      // 锁定推进后的当前段类型。
+      // 否则类型只能靠 id % scheduleTypes.length 实时推导，用户中途改 longPauseInterval
+      // 会让正在跑的段类型在 work ↔ longpause 之间漂移。
+      this.items[0].type = this.derivedTypeFor(this.items[0].id)
     },
 
     /** Allows locking information on a schedule item (so the getter will not override it) */
