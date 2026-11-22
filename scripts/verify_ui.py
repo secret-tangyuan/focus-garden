@@ -463,6 +463,10 @@ async def main():
           return { status: r.status, ok: body.ok, state: body.state }
         }""")
         check("登录后可读自己的云端存档", cloud["status"] == 200 and cloud["ok"] is True, str(cloud["status"]))
+        if os.environ.get("FOCUS_TEST_USER"):
+            owner = await page.evaluate("() => localStorage.getItem('focus-garden-cloud-owner')")
+            expected_owner = "user:" + os.environ["FOCUS_TEST_USER"]
+            check("本地花园标记当前登录账号", owner == expected_owner, str(owner))
 
         await set_garden(page, {"totalMinutes": 777})
         await page.wait_for_timeout(2400)
