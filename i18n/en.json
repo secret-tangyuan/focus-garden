@@ -56,14 +56,6 @@
       }
     },
     "scheduleMinTime": "The minimum allowed time is 5 seconds",
-    "clock": {
-      "title": "Current system time",
-      "description": "Show the current date and time of this device",
-      "button": "Show time",
-      "hide": "Hide time",
-      "shown": "Current system time shown",
-      "hidden": "Current system time hidden"
-    },
     "about": {
       "madeby": "Made by Imre Gera",
       "source": "Source code",
@@ -108,7 +100,7 @@
       },
       "currentTimer": {
         "_title": "Timer style",
-        "_description": "Focus always shows hours, minutes and seconds; breaks use the style chosen here",
+        "_description": "Shows HH:MM:SS by default; you can also switch to approximate or percentage",
         "_values": {
           "traditional": "Traditional",
           "approximate": "Approximate",

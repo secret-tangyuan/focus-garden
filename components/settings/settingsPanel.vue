@@ -9,7 +9,6 @@ import ExportButton from '@/components/settings/exportButton.vue'
 import ImportButton from '@/components/settings/importButton.vue'
 
 import AboutTab from '~~/components/settings/aboutTab.vue'
-import SystemClock from '~~/components/settings/systemClock.vue'
 
 import presetTimers from '~~/assets/settings/timerPresets'
 import { useSettings } from '~~/stores/settings'
@@ -168,8 +167,6 @@ notificationsStore.updateEnabled()
             <Divider />
             <SettingsItem :type="Control.Check" path="performance.showProgressBar" />
             <SettingsItem v-if="isWeb" :type="Control.Check" path="pageTitle.useTickEmoji" />
-            <Divider />
-            <SystemClock />
             <!-- TODO Audio volume control -->
           </div>
 

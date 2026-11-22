@@ -69,6 +69,9 @@ useHead({
 useGardenCloud()
 
 onMounted(() => {
+  // 监听 window 而不是页面容器：灵动岛常驻顶部中央，事件从它身上出发不会冒泡到容器
+  window.addEventListener('mousemove', onImmersivePointerMove)
+
   // 读取统一身份会话（精简登录用）
   const auth = useAuth()
   auth.fetchSession()
@@ -97,6 +100,10 @@ onMounted(() => {
 })
 
 useTicker()
+
+onBeforeUnmount(() => {
+  window.removeEventListener('mousemove', onImmersivePointerMove)
+})
 
 // 专注中只允许关键通知：其余暂存到专注结束后补发
 watch(
@@ -168,10 +175,7 @@ const progressBarSchedules = computed(() => {
 
 <template>
   <Layout>
-    <section
-      class="h-full overflow-hidden duration-300 ease-in dark:text-gray-50"
-      @mousemove="onImmersivePointerMove"
-    >
+    <section class="h-full overflow-hidden duration-300 ease-in dark:text-gray-50">
       <Title>{{ (remainingTimeString ? `(${remainingTimeString}) ` : '') + pageTitle }}</Title>
       <!-- 背景：纯色 + 格子 -->
       <div class="absolute w-full h-full bg-[#f7fafc] dark:bg-[#151b23] grid-bg" />

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Section, TimerType } from '~~/stores/settings'
+import { TimerType } from '~~/stores/settings'
 import { TimerState, useSchedule } from '~~/stores/schedule'
 
 import TimerTraditional from '@/components/timer/display/timerTraditional.vue'
@@ -24,11 +24,6 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const running = computed(() => scheduleStore.timerState === TimerState.RUNNING)
-/** 专注工作段固定用秒表（时分秒）；休息段才用用户选择的样式。 */
-const forceSeconds = computed(() =>
-  scheduleStore.currentSectionType === Section.work &&
-  scheduleStore.getCurrentTimerState !== TimerState.COMPLETED
-)
 </script>
 
 <template>
@@ -36,7 +31,7 @@ const forceSeconds = computed(() =>
     <Transition name="timer-switch" mode="out-in">
       <CompleteMarker v-if="scheduleStore.getCurrentTimerState === TimerState.COMPLETED" :key="'complete'" />
       <TimerTraditional
-        v-else-if="forceSeconds || props.timerWidget === TimerType.Traditional"
+        v-else-if="props.timerWidget === TimerType.Traditional"
         :key="'traditional'"
         @tick="$emit('tick', $event)"
       />
