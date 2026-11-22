@@ -421,6 +421,15 @@
       "enter": "进入沉浸模式",
       "exit": "展开专注界面"
     },
+    "notice": {
+      "pausedTitle": "已暂停计时",
+      "pausedBody": "点击继续即可恢复专注",
+      "resumedTitle": "继续专注",
+      "resumedBody": "计时已恢复",
+      "resetTitle": "计时已重置",
+      "resetBody": "可从当前时段重新开始",
+      "exitPausedBody": "已暂停并退出全屏"
+    },
     "blur": {
       "title": "已暂停计时",
       "hint": "窗口失去焦点，回到后点击继续"
@@ -523,6 +532,7 @@
     "submit": "登录",
     "submitting": "登录中…",
     "welcome": "已登录",
+    "loggedOut": "已退出登录",
     "accountTitle": "账户",
     "accountBody": "管理当前登录状态",
     "logout": "退出登录",

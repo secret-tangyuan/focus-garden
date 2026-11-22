@@ -1,5 +1,6 @@
 <script setup>
 import { IconSettings, IconChecklist, IconTrees, IconLogin, IconUserCircle, IconMaximizeOff, IconArrowsMinimize } from '@tabler/icons-vue'
+import { useI18n } from 'vue-i18n'
 import { ButtonImportance, ButtonTheme } from './base/types/button'
 import CButton from '~~/components/base/uiButton.vue'
 import ScheduleView from '@/components/schedule/scheduleDisplay.vue'
@@ -8,11 +9,14 @@ import { TimerState, useSchedule } from '~~/stores/schedule'
 import { useSettings } from '~~/stores/settings'
 import { useAuth } from '~~/stores/auth'
 import { useFocusMode } from '~~/stores/focusMode'
+import { useIsland } from '~~/stores/island'
 
 const openPanels = useOpenPanels()
 const auth = useAuth()
 const scheduleStore = useSchedule()
 const focusMode = useFocusMode()
+const island = useIsland()
+const { t } = useI18n()
 
 /** 只有在专注中（计时在跑或已进全屏）才显示「暂停并退出」 */
 const showExitFocus = computed(() =>
@@ -28,6 +32,11 @@ const canEnterImmersive = computed(() =>
 const pauseAndExit = async () => {
   if (scheduleStore.timerState === TimerState.RUNNING) {
     scheduleStore.timerState = TimerState.PAUSED
+    island.show({
+      title: String(t('focus.notice.pausedTitle')),
+      detail: String(t('focus.notice.exitPausedBody')),
+      tone: 'warning'
+    })
   }
   // 不标记成「因退出全屏而暂停」：回来后不要自动继续
   focusMode.clearPausedByExit()

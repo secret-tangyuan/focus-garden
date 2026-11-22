@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { IconMaximize, IconAlertTriangle, IconEyeOff } from '@tabler/icons-vue'
+import { IconMaximize, IconAlertTriangle } from '@tabler/icons-vue'
+import { useI18n } from 'vue-i18n'
 import { TimerState, useSchedule } from '~~/stores/schedule'
 import { useFocusMode } from '~~/stores/focusMode'
+import { useIsland } from '~~/stores/island'
 
 const focusMode = useFocusMode()
 const scheduleStore = useSchedule()
-
-/** 失焦提示 */
-const blurred = ref(false)
-let blurTimer: ReturnType<typeof setTimeout> | null = null
+const island = useIsland()
+const { t } = useI18n()
 
 /** 计时进行中退出了全屏 → 拦截 */
 const handleChange = () => {
@@ -23,6 +23,12 @@ const handleChange = () => {
     if (focusMode.autoPause && scheduleStore.timerState === TimerState.RUNNING) {
       scheduleStore.timerState = TimerState.PAUSED
       focusMode.markPausedByExit()
+      island.show({
+        title: String(t('focus.blur.title')),
+        detail: String(t('focus.notice.exitPausedBody')),
+        tone: 'warning',
+        duration: 3800
+      })
     }
   } else if (focusMode.isFullscreen) {
     focusMode.blocked = false
@@ -36,6 +42,11 @@ const backToFullscreen = async () => {
     focusMode.clearPausedByExit()
     if (scheduleStore.timerState === TimerState.PAUSED) {
       scheduleStore.timerState = TimerState.RUNNING
+      island.show({
+        title: String(t('focus.notice.resumedTitle')),
+        detail: String(t('focus.notice.resumedBody')),
+        tone: 'success'
+      })
     }
   }
 }
@@ -45,10 +56,12 @@ const pauseOnBlur = () => {
   if (scheduleStore.timerState !== TimerState.RUNNING) { return }
 
   scheduleStore.timerState = TimerState.PAUSED
-  blurred.value = true
-
-  if (blurTimer) { clearTimeout(blurTimer) }
-  blurTimer = setTimeout(() => { blurred.value = false }, 4000)
+  island.show({
+    title: String(t('focus.blur.title')),
+    detail: String(t('focus.blur.hint')),
+    tone: 'warning',
+    duration: 4200
+  })
 }
 
 const handleVisibility = () => {
@@ -66,7 +79,6 @@ onBeforeUnmount(() => {
   document.removeEventListener('fullscreenchange', handleChange)
   document.removeEventListener('visibilitychange', handleVisibility)
   window.removeEventListener('blur', pauseOnBlur)
-  if (blurTimer) { clearTimeout(blurTimer) }
 })
 </script>
 
@@ -92,24 +104,5 @@ onBeforeUnmount(() => {
       </button>
       <p class="text-xs text-slate-500">{{ $t('focus.guard.exitHint') }}</p>
     </div>
-
-    <!-- 失焦暂停提示 -->
-    <Transition
-      enter-from-class="-translate-y-6 opacity-0"
-      enter-active-class="transition duration-300 ease-out"
-      leave-to-class="-translate-y-6 opacity-0"
-      leave-active-class="transition duration-300 ease-in"
-    >
-      <div
-        v-if="blurred"
-        class="fixed left-1/2 top-6 z-[90] flex -translate-x-1/2 items-center gap-3 rounded-2xl border border-amber-200 bg-white px-5 py-3 text-sm shadow-xl"
-      >
-        <span class="flex h-9 w-9 items-center justify-center rounded-full bg-amber-100 text-amber-600">
-          <IconEyeOff :size="20" />
-        </span>
-        <span class="font-bold text-slate-800">{{ $t('focus.blur.title') }}</span>
-        <span class="text-xs text-slate-500">{{ $t('focus.blur.hint') }}</span>
-      </div>
-    </Transition>
   </Teleport>
 </template>

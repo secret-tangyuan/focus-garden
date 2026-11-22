@@ -427,6 +427,15 @@
       "enter": "Enter immersive mode",
       "exit": "Expand focus controls"
     },
+    "notice": {
+      "pausedTitle": "Timer paused",
+      "pausedBody": "Tap resume to continue focusing",
+      "resumedTitle": "Focus resumed",
+      "resumedBody": "The timer is running again",
+      "resetTitle": "Timer reset",
+      "resetBody": "Restart from the current section",
+      "exitPausedBody": "Paused and left full screen"
+    },
     "blur": {
       "title": "Timer paused",
       "hint": "The window lost focus — click continue when you are back"
@@ -529,6 +538,7 @@
     "submit": "Sign in",
     "submitting": "Signing in…",
     "welcome": "Signed in",
+    "loggedOut": "Signed out",
     "accountTitle": "Account",
     "accountBody": "Manage the current session",
     "logout": "Sign out",

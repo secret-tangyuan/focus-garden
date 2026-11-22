@@ -1,43 +1,25 @@
 <script setup lang="ts">
-import { IconTrees, IconSun } from '@tabler/icons-vue'
+import { useI18n } from 'vue-i18n'
 import { useGarden } from '~~/stores/garden'
+import { useIsland } from '~~/stores/island'
 
 const garden = useGarden()
-const visible = ref(false)
+const island = useIsland()
+const { t } = useI18n()
 const shownAt = ref(0)
-/** 本次获得的阳光（专注分钟数） */
-const gainedSunlight = ref(0)
 
 watch(() => garden.lastPlantedAt, (value) => {
   if (!value || value === shownAt.value) { return }
   shownAt.value = value
-  gainedSunlight.value = garden.lastPlantedMinutes
-  visible.value = true
-  setTimeout(() => { visible.value = false }, 3200)
+  island.show({
+    title: String(t('garden.planted')),
+    detail: `+${garden.lastPlantedMinutes} ☀️ · ${t('garden.total')} ${garden.totalMinutes} min`,
+    tone: 'garden',
+    duration: 3600
+  })
 })
 </script>
 
 <template>
-  <Teleport to="body">
-    <Transition
-      enter-from-class="-translate-y-6 opacity-0"
-      enter-active-class="transition duration-300 ease-out"
-      leave-to-class="-translate-y-6 opacity-0"
-      leave-active-class="transition duration-300 ease-in"
-    >
-      <div
-        v-if="visible"
-        class="fixed left-1/2 top-6 z-[90] flex -translate-x-1/2 items-center gap-3 rounded-2xl border border-brand/40 bg-white px-5 py-3 text-sm shadow-xl"
-      >
-        <span class="flex h-9 w-9 items-center justify-center rounded-full bg-brand/25 text-brand-strong">
-          <IconTrees :size="20" />
-        </span>
-        <span class="font-bold text-slate-800">{{ $t('garden.planted') }}</span>
-        <span class="flex items-center gap-1 text-xs font-bold text-amber-600">
-          <IconSun :size="14" />+{{ gainedSunlight }}
-        </span>
-        <span class="text-xs text-slate-500">{{ $t('garden.total') }} {{ garden.totalMinutes }} min</span>
-      </div>
-    </Transition>
-  </Teleport>
+  <span class="hidden" aria-hidden="true" />
 </template>

@@ -27,6 +27,7 @@ import StartGate from '~/components/focus/startGate.vue'
 import QuickPresets from '~/components/focus/quickPresets.vue'
 import DistractionTip from '~/components/focus/distractionTip.vue'
 import LoginPanel from '~/components/focus/loginPanel.vue'
+import DynamicIsland from '~/components/focus/dynamicIsland.vue'
 
 // components
 const AppBar = defineAsyncComponent(() => import('@/components/appBar.vue'))
@@ -211,6 +212,7 @@ const progressBarSchedules = computed(() => {
       <StartGate />
       <DistractionTip />
       <LoginPanel />
+      <DynamicIsland />
     </section>
   </Layout>
 </template>

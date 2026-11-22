@@ -209,6 +209,18 @@ async def main():
         await page.get_by_test_id("immersive-exit").click()
         await page.wait_for_timeout(250)
 
+        # 3b. 手动暂停 / 恢复也统一走灵动岛
+        await page.get_by_role("button", name="开始或暂停计时器").click()
+        await page.wait_for_timeout(250)
+        check("手动暂停通知走灵动岛",
+              await page.get_by_test_id("dynamic-island").count() == 1
+              and await page.get_by_text("已暂停计时").count() > 0)
+        await page.get_by_role("button", name="开始或暂停计时器").click()
+        await page.wait_for_timeout(250)
+        check("恢复计时通知覆盖为灵动岛",
+              await page.get_by_test_id("dynamic-island").count() == 1
+              and await page.get_by_text("继续专注").count() > 0)
+
         # 4. 改回 10 秒继续验收，专注中固定显示 mm:ss
         await page.evaluate("""() => {
           const app = document.querySelector('#__nuxt').__vue_app__

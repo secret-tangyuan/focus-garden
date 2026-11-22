@@ -1,35 +1,34 @@
 <script setup lang="ts">
-import { IconLogin, IconLogout, IconUserCircle, IconX, IconAlertCircle, IconCircleCheck, IconExternalLink } from '@tabler/icons-vue'
+import { IconLogin, IconLogout, IconUserCircle, IconX, IconAlertCircle, IconExternalLink } from '@tabler/icons-vue'
+import { useI18n } from 'vue-i18n'
 import { useAuth } from '~~/stores/auth'
+import { useIsland } from '~~/stores/island'
 import { useRuntimeConfig } from '#imports'
 
 const auth = useAuth()
+const island = useIsland()
 const runtimeConfig = useRuntimeConfig()
+const { t } = useI18n()
 
 const username = ref('')
 const password = ref('')
 const usernameRef = ref<HTMLInputElement | null>(null)
-const showWelcome = ref(false)
 const logoutBusy = ref(false)
-let welcomeTimer: ReturnType<typeof setTimeout> | null = null
-
-const hideWelcome = () => {
-  showWelcome.value = false
-  if (welcomeTimer) {
-    clearTimeout(welcomeTimer)
-    welcomeTimer = null
-  }
-}
 
 watch(() => auth.authenticated, (authenticated, previous) => {
-  if (!authenticated) {
-    hideWelcome()
+  if (authenticated && previous === false) {
+    island.show({
+      title: String(t('login.welcome')),
+      detail: auth.displayName,
+      tone: 'success'
+    })
     return
   }
-  if (previous === false) {
-    showWelcome.value = true
-    if (welcomeTimer) { clearTimeout(welcomeTimer) }
-    welcomeTimer = setTimeout(hideWelcome, 3200)
+  if (!authenticated && previous === true) {
+    island.show({
+      title: String(t(auth.expired ? 'login.expired' : 'login.loggedOut')),
+      tone: auth.expired ? 'warning' : 'info'
+    })
   }
 })
 
@@ -73,7 +72,6 @@ const logoutAccount = async () => {
   await auth.logout()
   username.value = ''
   password.value = ''
-  hideWelcome()
   auth.closeLogin()
   logoutBusy.value = false
 }
@@ -99,7 +97,6 @@ const onKeydown = (event: KeyboardEvent) => {
 onMounted(() => window.addEventListener('keydown', onKeydown))
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKeydown)
-  if (welcomeTimer) { clearTimeout(welcomeTimer) }
 })
 </script>
 
@@ -238,35 +235,6 @@ onBeforeUnmount(() => {
       </div>
     </Transition>
 
-    <!-- 登录成功：一次性灵动岛提示，不常驻 -->
-    <div
-      class="pointer-events-none fixed left-1/2 top-4 z-[91] -translate-x-1/2"
-      aria-live="polite"
-    >
-      <Transition
-        appear
-        enter-from-class="dynamic-island-enter-from"
-        enter-active-class="dynamic-island-enter-active"
-        leave-to-class="dynamic-island-leave-to"
-        leave-active-class="dynamic-island-leave-active"
-      >
-        <button
-          v-if="showWelcome && !auth.loginOpen"
-          type="button"
-          class="pointer-events-auto flex items-center gap-2 rounded-full border border-white/10 bg-slate-950 px-4 py-2 text-white shadow-[0_12px_40px_rgba(15,23,42,0.32)]"
-          aria-label="关闭登录提示"
-          @click="hideWelcome"
-        >
-          <span class="relative flex h-2.5 w-2.5">
-            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-            <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400" />
-          </span>
-          <IconCircleCheck :size="16" class="text-emerald-400" />
-          <span class="text-xs font-bold">{{ $t('login.welcome') }}</span>
-          <span class="max-w-32 truncate text-[11px] text-white/65">{{ auth.displayName }}</span>
-        </button>
-      </Transition>
-    </div>
   </Teleport>
 </template>
 
@@ -288,18 +256,4 @@ onBeforeUnmount(() => {
     opacity 160ms ease;
 }
 
-.dynamic-island-enter-active,
-.dynamic-island-leave-active {
-  transition:
-    opacity 220ms ease,
-    transform 320ms cubic-bezier(0.22, 1, 0.36, 1),
-    filter 220ms ease;
-}
-
-.dynamic-island-enter-from,
-.dynamic-island-leave-to {
-  opacity: 0;
-  transform: translateY(-12px) scale(0.72);
-  filter: blur(8px);
-}
 </style>

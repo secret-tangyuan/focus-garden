@@ -1,14 +1,18 @@
 <script setup lang="ts">
 import { IconPlayerPlay, IconPlayerPause, IconPlayerStop, IconPlayerTrackNext } from '@tabler/icons-vue'
+import { useI18n } from 'vue-i18n'
 import { ButtonImportance, ButtonTheme } from '~~/components/base/types/button'
 import CButton from '~~/components/base/uiButton.vue'
 import { TimerState, useSchedule } from '~~/stores/schedule'
 import { useFocusMode } from '~~/stores/focusMode'
 import { useHistory } from '~~/stores/history'
+import { useIsland } from '~~/stores/island'
 
 const scheduleStore = useSchedule()
 const focusMode = useFocusMode()
 const history = useHistory()
+const island = useIsland()
+const { t } = useI18n()
 
 const reset = () => {
   focusMode.exitImmersive()
@@ -17,12 +21,22 @@ const reset = () => {
   } else {
     scheduleStore.timerState = TimerState.STOPPED
   }
+  island.show({
+    title: String(t('focus.notice.resetTitle')),
+    detail: String(t('focus.notice.resetBody')),
+    tone: 'info'
+  })
 }
 
 const playPause = async () => {
   // 暂停 / 继续
   if (scheduleStore.timerState === TimerState.RUNNING) {
     scheduleStore.timerState = TimerState.PAUSED
+    island.show({
+      title: String(t('focus.notice.pausedTitle')),
+      detail: String(t('focus.notice.pausedBody')),
+      tone: 'warning'
+    })
     return
   }
 
@@ -30,6 +44,13 @@ const playPause = async () => {
   history.recordLogin()
   const startingNewSection = scheduleStore.timerState !== TimerState.PAUSED
   scheduleStore.timerState = TimerState.RUNNING
+  if (!startingNewSection) {
+    island.show({
+      title: String(t('focus.notice.resumedTitle')),
+      detail: String(t('focus.notice.resumedBody')),
+      tone: 'success'
+    })
+  }
   if (startingNewSection && scheduleStore.currentSectionType === 'work') {
     focusMode.enterImmersive()
   }
