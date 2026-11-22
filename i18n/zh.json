@@ -29,7 +29,7 @@
     "approximate": {
       "hours": "小时 | 小时",
       "minutes": "分 | 分",
-      "hoursMinutes": "{m} 分钟"
+      "hoursMinutes": "小时 {m} 分钟"
     }
   },
   "settings": {
