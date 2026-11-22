@@ -9,12 +9,8 @@ import {
   IconUserCircle
 } from '@tabler/icons-vue'
 import { useIsland, type IslandTone } from '~~/stores/island'
-import { useOpenPanels } from '~~/stores/openpanels'
 
 const island = useIsland()
-const openPanels = useOpenPanels()
-/** 面板（设置 / 森林）靠右展开，此时灵动岛让到左边，避免压住面板标题 */
-const panelOpen = computed(() => openPanels.settings || openPanels.garden || openPanels.todo)
 let hideTimer: ReturnType<typeof setTimeout> | null = null
 let clockTimer: ReturnType<typeof setInterval> | null = null
 
@@ -73,10 +69,7 @@ onBeforeUnmount(() => {
 <template>
   <Teleport to="body">
     <div
-      :class="[
-        'pointer-events-none fixed top-4 z-[120] transition-all duration-300',
-        panelOpen ? 'left-6' : 'left-1/2 -translate-x-1/2'
-      ]"
+      class="pointer-events-none fixed left-1/2 top-4 z-[120] -translate-x-1/2"
       aria-live="polite"
       data-testid="dynamic-island"
     >

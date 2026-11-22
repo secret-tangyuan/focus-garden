@@ -441,7 +441,7 @@ async def main():
         await page.locator('[data-testid="aux-panel-overlay"]').click()
         await page.wait_for_timeout(500)
         check("点设置窗外自动收起",
-              not await page.locator(r"section.fixed.z-\[97\]").is_visible())
+              not await page.locator(r"section.fixed.z-\[125\]").is_visible())
 
         # 11b. 休息段（短休 / 长休）：点「设置」直接打开，不弹「可能干扰专注」
         for section_type, label in (("shortpause", "短休"), ("longpause", "长休")):
@@ -460,7 +460,9 @@ async def main():
             await page.wait_for_timeout(700)
             pending = await page.evaluate("() => { const o = document.querySelector('#__nuxt').__vue_app__.config.globalProperties.$pinia.state.value.openpanels; return o.pending }")
             check(f"{label}段点设置不弹提醒且直接打开面板",
-                  await page.get_by_text("点击可能会干扰注意力").count() == 0 and pending is None,
+                  await page.get_by_text("点击可能会干扰注意力").count() == 0
+                  and pending is None
+                  and await page.locator(r"section.fixed.z-\[125\]").count() > 0,
                   f"pending={pending}")
             await page.screenshot(path=os.path.join(SHOTS, f"20-break-{section_type}-no-distract.png"))
             await close_panels(page)
