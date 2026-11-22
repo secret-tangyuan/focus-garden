@@ -64,8 +64,10 @@
       "mobileSupport": "由于 Google Play 商店的规则，我无法向您展示移动应用程序中的任何链接以便向项目捐赠。",
       "share": "或在社交媒体上分享这个应用：",
       "project": "专注学习站 · 本项目",
-      "original": "原始项目 · 原作者 Imre Gera",
-      "licenseNote": "本站基于 FocusTide（MIT 许可证）改造，保留原版权声明与许可声明。"
+      "original": "计时器上游 · Imre Gera",
+      "gardenAssets": "植物素材上游 · Hamin Yovan Antony",
+      "thanks": "感谢 FocusTide 与 FocusGrove 作者的开源工作。",
+      "licenseNote": "本站原创部分采用 Apache-2.0；FocusTide 与 FocusGrove 的 MIT 许可及署名均完整保留。"
     },
     "values": {
       "manage": {
@@ -97,8 +99,8 @@
         "_description": ""
       },
       "currentTimer": {
-        "_title": "计时器风格",
-        "_description": "",
+        "_title": "休息计时器风格",
+        "_description": "专注工作段始终显示 MM:SS 秒数",
         "_values": {
           "traditional": "传统",
           "approximate": "粗略",
@@ -414,6 +416,11 @@
     "workLength": "专注",
     "pauseLength": "休息",
     "minutes": "分钟",
+    "hours": "小时",
+    "immersive": {
+      "enter": "进入沉浸模式",
+      "exit": "展开专注界面"
+    },
     "blur": {
       "title": "已暂停计时",
       "hint": "窗口失去焦点，回到后点击继续"

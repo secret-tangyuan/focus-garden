@@ -118,6 +118,13 @@ def close_panels(page):
     }""")
 
 
+async def ensure_expanded_ui(page):
+    """如果沉浸模式正处于收起状态，先通过展开按钮恢复完整 UI。"""
+    if await page.get_by_test_id("immersive-exit").count() > 0:
+        await page.get_by_test_id("immersive-exit").click()
+        await page.wait_for_timeout(300)
+
+
 def long_sections(page):
     """把各段时长拉长，避免断言期间自动推进到下一段"""
     return page.evaluate("""() => {
@@ -147,31 +154,76 @@ async def main():
         # 1. 进入页
         gate = page.get_by_role("button", name="进入全屏专注")
         check("进入页出现（强制全屏门）", await gate.count() > 0)
+        icon_href = await page.locator('link[rel="icon"]').last.get_attribute("href")
+        check("站点图标使用本站 Logo", icon_href == "/tangyuan.svg", str(icon_href))
         await page.screenshot(path=os.path.join(SHOTS, "01-gate.png"))
 
         # 1b. 入口页就能设置与登录
         check("入口页有「打开设置」入口", await page.get_by_label("打开设置").count() > 0)
         check("入口页有「登录」入口", await page.get_by_label("登录").count() > 0)
 
-        # 2. 快捷倒计时
-        chips = await page.locator("button", has_text="25").count()
-        check("快捷倒计时（15/25/45/60/90）可选", chips > 0)
+        # 2. 时长选择改为滑杆
+        work_slider = page.get_by_test_id("work-slider")
+        pause_slider = page.get_by_test_id("pause-slider")
+        check("专注时长使用滑块选择", await work_slider.count() == 1)
+        check("休息时长使用滑块选择", await pause_slider.count() == 1)
+        await work_slider.fill("90")
+        await page.wait_for_timeout(250)
+        slider_text = await page.locator("body").inner_text()
+        check("90 分钟滑块显示为 1 小时 30 分钟", "1 小时 30 分钟" in slider_text)
 
-        # 3. 把专注时长改成 10 秒，便于验收
+        await gate.click()
+        await page.wait_for_timeout(1500)
+
+        # 3. 90 分钟用时分秒，且默认进入沉浸模式
+        display_text = re.sub(r"\s+", "", await page.locator(".timer-display").first.inner_text())
+        check("90 分钟显示为 HH:MM:SS",
+              re.fullmatch(r"01:2\d:\d{2}", display_text) is not None, display_text)
+        immersive = await page.evaluate("() => document.querySelector('#__nuxt').__vue_app__.config.globalProperties.$pinia.state.value.focusMode.immersive")
+        check("开始专注后默认进入沉浸模式", immersive is True)
+        check("沉浸模式只留时间与展开按钮",
+              await page.get_by_label("打开设置").count() == 0
+              and await page.get_by_role("button", name="开始或暂停计时器").count() == 0
+              and await page.get_by_test_id("immersive-exit").count() == 1)
+        await page.mouse.move(720, 24)
+        await page.wait_for_timeout(250)
+        check("鼠标移到顶部临时显示工具栏", await page.get_by_label("打开设置").count() == 1)
+        await page.mouse.move(720, 420)
+        await page.wait_for_timeout(250)
+        check("鼠标离开边缘恢复沉浸", await page.get_by_label("打开设置").count() == 0)
+        await page.mouse.move(720, 860)
+        await page.wait_for_timeout(250)
+        check("鼠标移到底部临时显示计时控制",
+              await page.get_by_role("button", name="开始或暂停计时器").count() == 1)
+        await page.mouse.move(720, 420)
+        await page.wait_for_timeout(250)
+        check("鼠标离开底部恢复纯时间界面",
+              await page.get_by_role("button", name="开始或暂停计时器").count() == 0)
+        await page.get_by_test_id("immersive-exit").click()
+        await page.wait_for_timeout(300)
+        check("可从 UI 展开沉浸界面", await page.get_by_label("进入沉浸模式").count() == 1)
+        await page.get_by_label("进入沉浸模式").click()
+        await page.wait_for_timeout(250)
+        check("可从 UI 重新进入沉浸模式",
+              await page.get_by_test_id("immersive-exit").count() == 1)
+        await page.get_by_test_id("immersive-exit").click()
+        await page.wait_for_timeout(250)
+
+        # 4. 改回 10 秒继续验收，专注中固定显示 mm:ss
         await page.evaluate("""() => {
           const app = document.querySelector('#__nuxt').__vue_app__
           const pinia = app.config.globalProperties.$pinia
           pinia.state.value.settings.schedule.lengths.work = 10000
           pinia.state.value.settings.schedule.lengths.shortpause = 5000
           pinia.state.value.settings.schedule.lengths.longpause = 5000
+          const schedule = pinia._s.get('schedule')
+          schedule.lockInfo({ index: 0, length: 10000, type: 'work' })
+          schedule.items[0].timeElapsed = 0
         }""")
-
-        await gate.click()
-        await page.wait_for_timeout(1500)
-
-        # 4. mm:ss 秒级显示
+        await page.wait_for_timeout(800)
         display_text = re.sub(r"\s+", "", await page.locator(".timer-display").first.inner_text())
-        check("计时显示为 mm:ss（含冒号）", re.fullmatch(r"\d{2}:\d{2}", display_text) is not None, display_text)
+        check("不足 1 小时只显示 MM:SS",
+              re.fullmatch(r"\d{2}:\d{2}", display_text) is not None, display_text)
 
         # 5. 等这一段专注跑完 → 种树
         planted = 0
@@ -248,6 +300,11 @@ async def main():
         await page.get_by_label("登录").first.click()
         await page.wait_for_timeout(700)
         check("点「登录」打开站内精简登录面板", await page.get_by_text("统一身份 · 专注学习站").count() > 0)
+        await page.locator('[data-testid="login-overlay"]').click()
+        await page.wait_for_timeout(400)
+        check("点登录窗外自动收起", not await page.locator('[data-testid="login-panel"]').is_visible())
+        await page.get_by_label("登录").first.click()
+        await page.wait_for_timeout(500)
         if login_ok is not None:
             await page.get_by_label("用户名").fill(os.environ["FOCUS_TEST_USER"])
             await page.get_by_label("密码").fill(os.environ["FOCUS_TEST_PASSWORD"])
@@ -256,14 +313,20 @@ async def main():
             check("精简版登录成功（提示已登录）", await page.get_by_text("已登录").count() > 0)
             check("登录失败没有误报", await page.get_by_text("用户名或密码错误").count() == 0)
             await page.screenshot(path=os.path.join(SHOTS, "10-login.png"))
+        else:
+            await page.locator('[data-testid="login-overlay"]').click()
+            await page.wait_for_timeout(300)
 
         # 11. 专注中：二次确认小窗
         if await timer_state(page) != 1:
+            await ensure_expanded_ui(page)
             await page.get_by_role("button", name="开始或暂停计时器").click()
             await page.wait_for_timeout(900)
+        await ensure_expanded_ui(page)
         await long_sections(page)
         await set_section(page, "work", running=True)
         await page.wait_for_timeout(300)
+        await ensure_expanded_ui(page)
         await page.get_by_label("设置").click()
         await page.wait_for_timeout(600)
         check("专注中点「设置」先弹提醒小窗", await page.get_by_text("点击可能会干扰注意力").count() > 0)
@@ -285,21 +348,38 @@ async def main():
         check("设置页有中文条目（如「段落结束」）", "段落结束" in settings_text)
         await page.screenshot(path=os.path.join(SHOTS, "08-settings.png"))
 
-        # 13. 关于页双作者
+        # 13. 关于页三方作者
         await page.get_by_role("tab", name="关于").click()
         await page.wait_for_timeout(600)
         about_text = await page.locator("body").inner_text()
-        check("关于页显示双作者（秘密小汤圆 + FocusTide）",
-              "秘密小汤圆" in about_text and "FocusTide" in about_text)
+        check("关于页显示三位作者",
+              all(name in about_text for name in ("秘密小汤圆", "Imre Gera", "Hamin Yovan Antony")))
+        check("FocusTide 使用原作者 Logo",
+              await page.locator('img[src="/focus-tide-logo.svg"]').count() == 1)
+        check("FocusGrove 使用原作者 Logo",
+              await page.locator('img[src="/focus-grove-logo.svg"]').count() == 1)
+        source_links = await page.locator(
+            'a[href="https://github.com/secret-tangyuan/focus-garden"], '
+            'a[href="https://github.com/Hanziness/FocusTide"], '
+            'a[href="https://github.com/haminyovanantonyfk-netizen/focus-grove"]'
+        ).count()
+        check("三位作者都有源码跳转", source_links == 3, str(source_links))
         await page.screenshot(path=os.path.join(SHOTS, "09-about.png"))
+        await page.locator('[data-testid="aux-panel-overlay"]').click()
+        await page.wait_for_timeout(500)
+        check("点设置窗外自动收起",
+              not await page.locator(r"section.fixed.z-\[97\]").is_visible())
 
         # 11b. 休息段（短休 / 长休）：点「设置」直接打开，不弹「可能干扰专注」
         for section_type, label in (("shortpause", "短休"), ("longpause", "长休")):
             await close_panels(page)
             await page.wait_for_timeout(500)
             await long_sections(page)
+            await page.evaluate("() => { document.querySelector('#__nuxt').__vue_app__.config.globalProperties.$pinia.state.value.focusMode.immersive = true }")
             await set_section(page, section_type, running=True)
             await page.wait_for_timeout(300)
+            immersive_after_rest = await page.evaluate("() => document.querySelector('#__nuxt').__vue_app__.config.globalProperties.$pinia.state.value.focusMode.immersive")
+            check(f"{label}段自动退出沉浸模式", immersive_after_rest is False)
             await page.get_by_label("设置").click()
             await page.wait_for_timeout(700)
             pending = await page.evaluate("() => { const o = document.querySelector('#__nuxt').__vue_app__.config.globalProperties.$pinia.state.value.openpanels; return o.pending }")
@@ -307,7 +387,7 @@ async def main():
                   await page.get_by_text("点击可能会干扰注意力").count() == 0 and pending is None,
                   f"pending={pending}")
             check(f"{label}段点「设置」直接打开面板",
-                  await page.locator("section.fixed.z-\[97\]").count() > 0
+                  await page.locator(r"section.fixed.z-\[97\]").count() > 0
                   or await page.locator("aside").count() > 0)
             await page.screenshot(path=os.path.join(SHOTS, f"20-break-{section_type}-no-distract.png"))
             await close_panels(page)
@@ -420,6 +500,9 @@ async def main():
         check("12 个物种都能选中", len(chips) == 12, str(len(chips)))
         check("12 个物种都渲染出非空 SVG", all(c["kids"] > 0 for c in chips),
               str([c for c in chips if c["kids"] == 0]))
+        await page.locator('[data-testid="aux-panel-overlay"]').click()
+        await page.wait_for_timeout(500)
+        check("点森林窗外自动收起", not await page.locator("aside").first.is_visible())
 
         # 14.10 老数据迁移（独立 context，页面加载前注入旧结构）
         ctx2 = await browser.new_context(viewport={"width": 1440, "height": 900})

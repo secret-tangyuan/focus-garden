@@ -13,28 +13,28 @@ const iconConfig: IconResizerPluginOptions = {
   outputFolder: 'icons',
   variants: [
     {
-      src: '/public/icon.png',
+      src: '/public/tangyuan.svg',
       prefix: 'icon-maskable-',
       purpose: 'maskable',
       size: [64, 120, 144, 152, 192, 384, 512]
     },
     {
-      src: '/public/icon_monochrome.png',
+      src: '/public/tangyuan.svg',
       prefix: 'icon-monochrome-',
       purpose: 'monochrome',
       size: [64, 120, 144, 152, 192, 384, 512]
     },
     {
-      src: '/public/favicon.png',
+      src: '/public/tangyuan.svg',
       prefix: 'icon-base-',
       purpose: 'any',
       size: [64, 120, 144, 152, 192, 384, 512]
     },
     {
-      src: '/public/icon.png',
+      src: '/public/tangyuan.svg',
       prefix: 'icon-apple-',
       purpose: 'any',
-      bgColor: '#fee2e2',
+      bgColor: '#f7fafc',
       size: [192]
     }
   ]
@@ -92,7 +92,7 @@ export default defineNuxtConfig({
         { hid: 'og:url', property: 'og:url', content: import.meta.env.URL ? import.meta.env.URL : 'https://another-pomodoro.netlify.app' }
       ],
       link: [
-        { rel: 'icon', href: '/favicon.svg' }
+        { rel: 'icon', type: 'image/svg+xml', href: '/tangyuan.svg' }
       ]
     }
   },

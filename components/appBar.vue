@@ -1,5 +1,5 @@
 <script setup>
-import { IconSettings, IconChecklist, IconTrees, IconLogin, IconMaximizeOff } from '@tabler/icons-vue'
+import { IconSettings, IconChecklist, IconTrees, IconLogin, IconMaximizeOff, IconArrowsMinimize } from '@tabler/icons-vue'
 import { ButtonImportance, ButtonTheme } from './base/types/button'
 import CButton from '~~/components/base/uiButton.vue'
 import ScheduleView from '@/components/schedule/scheduleDisplay.vue'
@@ -18,6 +18,11 @@ const focusMode = useFocusMode()
 const showExitFocus = computed(() =>
   scheduleStore.timerState === TimerState.RUNNING || focusMode.isFullscreen
 )
+const canEnterImmersive = computed(() =>
+  scheduleStore.timerState === TimerState.RUNNING &&
+  scheduleStore.currentSectionType === 'work' &&
+  !focusMode.immersive
+)
 
 /** 暂停计时并退出全屏：直接执行，不做二次确认 */
 const pauseAndExit = async () => {
@@ -26,6 +31,7 @@ const pauseAndExit = async () => {
   }
   // 不标记成「因退出全屏而暂停」：回来后不要自动继续
   focusMode.clearPausedByExit()
+  focusMode.exitImmersive()
   await focusMode.exitFullscreen()
 }
 const { requestAccess } = usePanelAccess()
@@ -64,6 +70,20 @@ const settingsStore = useSettings()
       <IconMaximizeOff :size="16" />
       <span class="hidden md:inline">{{ $t('focus.exit.text') }}</span>
     </button>
+    <CButton
+      v-if="canEnterImmersive"
+      circle
+      :theme="ButtonTheme.Neutral"
+      :importance="ButtonImportance.Tonal"
+      class="transition rounded-full h-11"
+      no-content-theme
+      no-padding
+      inner-class="p-1"
+      :aria-label="$t('focus.immersive.enter')"
+      @click="focusMode.enterImmersive()"
+    >
+      <IconArrowsMinimize size="22" class="inline-block" />
+    </CButton>
     <CButton
       v-if="auth.identityReady"
       circle

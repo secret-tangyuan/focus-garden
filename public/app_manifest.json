@@ -1,53 +1,17 @@
 {
   "$schema": "https://json.schemastore.org/web-manifest-combined.json",
-  "name": "FocusTide: modern & simple Pomodoro app",
-  "short_name": "FocusTide",
-  "description": "Modern and customisable productivity timer, right in your browser!",
-  "start_url": "/timer?pwa=true",
-  "theme_color": "#F87171",
-  "background_color": "#FEE2E2",
+  "name": "秘密小汤圆 · 专注学习",
+  "short_name": "专注学习",
+  "description": "强制全屏的专注计时、种树养成与专注记录。",
+  "start_url": "/",
+  "theme_color": "#BBDDFF",
+  "background_color": "#F7FAFC",
   "orientation": "any",
   "categories": ["productivity", "utilities"],
   "display": "standalone",
   "shortcuts": [],
-  "lang": "en-US",
-  "screenshots": [
-    {
-      "src": "/assets/img/screenshots/stores/mobile_0.jpg",
-      "sizes": "1140x2280",
-      "type": "image/jpg",
-      "platform": "narrow",
-      "label": "A pomodoro timer running in the app"
-    },
-    {
-      "src": "/assets/img/screenshots/stores/mobile_1.jpg",
-      "sizes": "1140x2280",
-      "type": "image/jpg",
-      "platform": "narrow",
-      "label": "AnotherPomdoro comes with a built-in to-do manager"
-    },
-    {
-      "src": "/assets/img/screenshots/stores/mobile_2.jpg",
-      "sizes": "1140x2280",
-      "type": "image/jpg",
-      "platform": "narrow",
-      "label": "The timer is fully customizable: the timer\"s looks, the schedules and there\"s also a dark mode."
-    },
-    {
-      "src": "/assets/img/screenshots/stores/mobile_3.jpg",
-      "sizes": "1140x2280",
-      "type": "image/jpg",
-      "platform": "narrow",
-      "label": "Every feature is optional in FocusTide. If all you need is a simple timer, it can do that, too."
-    },
-    {
-      "src": "/assets/img/screenshots/stores/mobile_4.jpg",
-      "sizes": "1140x2280",
-      "type": "image/jpg",
-      "platform": "narrow",
-      "label": "Two screenshots showing the 'approximate' and 'percentage' timer styles."
-    }
-  ],
+  "lang": "zh-CN",
+  "screenshots": [],
   "icons": [
     {
       "src": "/icons/icon-maskable-64.png",

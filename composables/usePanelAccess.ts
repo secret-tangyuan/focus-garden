@@ -56,6 +56,11 @@ export function usePanelAccess () {
    * @param rect 触发按钮位置（专注中弹小窗时贴着它显示）
    */
   const requestAccess = (target: AccessTarget, rect?: TriggerRect) => {
+    if (target === 'login' && auth.loginOpen) {
+      auth.closeLogin()
+      return
+    }
+
     if (target !== 'login' && openPanels[target]) {
       // 已经打开 → 直接关闭
       openPanels[target] = false
@@ -70,10 +75,13 @@ export function usePanelAccess () {
 
     if (target === 'login') {
       // 站内精简版登录（按钮旁的小窗）
+      openPanels.closeAll()
       auth.openLogin(rect)
       return
     }
 
+    openPanels.closeAll()
+    openPanels.remember(target, rect)
     openPanels[target] = true
   }
 
@@ -84,6 +92,7 @@ export function usePanelAccess () {
     if (target === 'login') {
       const rect = openPanels.pendingRect
       openPanels.cancel()
+      openPanels.closeAll()
       auth.openLogin(rect)
       return
     }

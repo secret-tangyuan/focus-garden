@@ -42,13 +42,19 @@ const timeLeftStructured = computed(() => {
       .join(':')
   )
 
-  return { parts, completed }
+  return { parts, completed, hasHours: hours > 0 }
 })
 </script>
 
 <template>
   <div
-    :class="['md:text-[13rem] text-[8rem] leading-none timer-display relative', { 'active': running }]"
+    :class="[
+      'leading-none timer-display relative',
+      timeLeftStructured.hasHours
+        ? 'text-[4rem] sm:text-[6rem] md:text-[8rem] xl:text-[10rem]'
+        : 'text-[7rem] md:text-[13rem]',
+      { 'active': running }
+    ]"
   >
     <transition-group
       name="transition-traditional"

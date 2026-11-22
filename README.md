@@ -2,9 +2,8 @@
 
 强制全屏的专注学习计时器：**倒计时 + 种树 + 专注/登录记录**。
 
-> 本项目基于开源项目 **FocusTide**（MIT License）改造。
-> 上游：https://github.com/Hanziness/FocusTide · 原作者 Imre Gera
-> 原项目的 MIT 许可证完整保留在仓库根目录 `LICENSE`，改造说明见 `NOTICE.md`。
+> 本项目基于 **FocusTide**（MIT，原作者 Imre Gera）改造，植物美术移植自 **FocusGrove**
+> （MIT，作者 Hamin Yovan Antony）。三方署名与许可说明见 `NOTICE.md`。
 
 ## 功能
 
@@ -19,7 +18,7 @@
 | 种树 | 每完成一段专注种下一棵树；树种轮换（阔叶 / 针叶 / 樱花），树会随之后的专注次数逐级长大 |
 | 专注记录 | 最近 7 天柱状图、每次专注的时长与完成情况 |
 | 登录记录 | 每次进入专注模式都留一条登录记录（时间） |
-| 界面 | 纯色背景 + 格子，主色 `#bbddff`；关于页为双作者（左：秘密小汤圆，右：FocusTide 原作者 Imre Gera）；数据存在浏览器 localStorage |
+| 界面 | 纯色背景 + 格子，主色 `#bbddff`；关于页并列署名秘密小汤圆、Imre Gera、Hamin Yovan Antony |
 
 ## 身份服务（可选）
 
@@ -50,7 +49,7 @@
     FOCUS_TEST_USER=<账号> FOCUS_TEST_PASSWORD=<口令> python3 scripts/verify_ui.py
 
 覆盖 26 项：进入页、快捷倒计时、秒级计时、种树提示、森林面板、登录/专注记录、
-退出全屏拦截 + 回到全屏自动继续、失焦自动暂停、打开面板前的提醒、设置页文案完整性、关于页双作者。
+退出全屏拦截 + 回到全屏自动继续、失焦自动暂停、打开面板前的提醒、独立窗口点击外部关闭、设置页文案完整性、关于页三方署名。
 
 ## 目录
 
@@ -64,4 +63,5 @@
 
 ## 许可证
 
-上游 FocusTide 为 MIT；本改造同样以 MIT 发布，见 `LICENSE` 与 `NOTICE.md`。
+本站原创部分采用 Apache-2.0；FocusTide 与 FocusGrove 的 MIT 许可和署名完整保留，
+见 `LICENSE`、`NOTICE.md` 与 `licenses/`。

@@ -11,6 +11,7 @@ const focusMode = useFocusMode()
 const history = useHistory()
 
 const reset = () => {
+  focusMode.exitImmersive()
   if (scheduleStore.timerState !== TimerState.COMPLETED && scheduleStore.getSchedule[0].timeElapsed > scheduleStore.getSchedule[0].length) {
     scheduleStore.timerState = TimerState.COMPLETED
   } else {
@@ -27,7 +28,11 @@ const playPause = async () => {
 
   // 开始专注：先计时，再请求全屏（请求失败也不影响计时）
   history.recordLogin()
+  const startingNewSection = scheduleStore.timerState !== TimerState.PAUSED
   scheduleStore.timerState = TimerState.RUNNING
+  if (startingNewSection && scheduleStore.currentSectionType === 'work') {
+    focusMode.enterImmersive()
+  }
 
   if (focusMode.enabled && !focusMode.isFullscreen) {
     focusMode.entered = true
@@ -36,6 +41,7 @@ const playPause = async () => {
 }
 
 const advance = () => {
+  focusMode.exitImmersive()
   scheduleStore.timerState = TimerState.STOPPED
   scheduleStore.advance()
 }

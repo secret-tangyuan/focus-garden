@@ -30,6 +30,7 @@ Copyright 2025-2035 Secret Tangyuan
 - 移植内容：
   1. `SPECIES` 物种表 —— 12 个物种的 id / 造型 / 主色 / 解锁价
   2. `treeSVG()` 参数化 SVG 植物渲染器 —— 按「造型 × 成长阶段」生成的矢量美术
+  3. `icon.svg` —— FocusGrove 原项目 Logo，用于关于页的作者署名与来源标识
 - 修改说明：原生 JS 字符串模板改写为 Vue 3 SFC `components/garden/plantSvg.vue`；
   解锁价、初始解锁集合、成长公式与枯萎规则按本站玩法调整（未原样照搬）；
   未移植其应用骨架（计时器、统计、本地存储、商店、成就、联机房间、音频合成等）。

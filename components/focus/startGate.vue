@@ -21,6 +21,9 @@ const start = () => {
   focusMode.entered = true
   history.recordLogin()
   scheduleStore.timerState = TimerState.RUNNING
+  if (scheduleStore.currentSectionType === 'work') {
+    focusMode.enterImmersive()
+  }
 
   if (settingsStore.focus.fullscreen) {
     focusMode.requestFullscreen()
@@ -61,9 +64,13 @@ const skip = () => {
         </button>
       </div>
 
-      <span class="flex h-16 w-16 items-center justify-center rounded-3xl bg-brand/25 text-brand-strong">
-        <IconLeaf :size="32" />
-      </span>
+      <img
+        src="/tangyuan.svg"
+        width="72"
+        height="72"
+        class="h-[72px] w-[72px]"
+        alt="秘密小汤圆"
+      >
 
       <div>
         <h1 class="text-3xl font-bold text-slate-800">{{ $t('focus.gate.title') }}</h1>

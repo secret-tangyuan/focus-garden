@@ -17,7 +17,9 @@ export const useFocusMode = defineStore('focusMode', {
     /** 本次专注中退出全屏的次数 */
     exitCount: 0,
     /** 是否因为退出全屏而暂停了计时（回到全屏后自动继续） */
-    pausedByExit: false
+    pausedByExit: false,
+    /** 专注工作段是否处于沉浸模式（只留时间与展开按钮） */
+    immersive: false
   }),
 
   getters: {
@@ -109,6 +111,14 @@ export const useFocusMode = defineStore('focusMode', {
     /** 清掉「因退出全屏而暂停」的标记 */
     clearPausedByExit () {
       this.pausedByExit = false
+    },
+
+    enterImmersive () {
+      this.immersive = true
+    },
+
+    exitImmersive () {
+      this.immersive = false
     }
   }
 })

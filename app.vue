@@ -2,10 +2,12 @@
 import { defineAsyncComponent } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useHead } from '#imports'
-import { useSchedule } from '~~/stores/schedule'
+import { TimerState, useSchedule } from '~~/stores/schedule'
 import { useSettings } from '~~/stores/settings'
 import { useAuth } from '~~/stores/auth'
+import { useFocusMode } from '~~/stores/focusMode'
 import { useGardenCloud } from '~~/composables/useGardenCloud'
+import { IconArrowsMaximize } from '@tabler/icons-vue'
 
 import { useTicker } from '~~/components/ticker'
 import { useWeb } from '~~/platforms/web'
@@ -32,21 +34,12 @@ const AppBar = defineAsyncComponent(() => import('@/components/appBar.vue'))
 const settingsStore = useSettings()
 const mobileSettingsStore = useMobileSettings()
 const scheduleStore = useSchedule()
+const focusMode = useFocusMode()
+const immersiveReveal = ref<'top' | 'bottom' | null>(null)
 
 const runtimeConfig = useRuntimeConfig()
 
 const { t } = useI18n()
-
-const iconSvg = computed(() => `data:image/svg+xml,
-<svg
-  width="32"
-  height="32"
-  viewBox="0 0 32 32"
-  fill="none"
-  style="color: ${scheduleStore.currentScheduleColour};"
-  xmlns="http://www.w3.org/2000/svg"
->
-<circle cx="16" cy="16" r="14" fill="currentColor" /></svg>`)
 
 useHead({
   link: [
@@ -57,24 +50,17 @@ useHead({
     {
       rel: 'apple-touch-icon',
       href: '/icons/icon-apple-192.png'
+    },
+    {
+      rel: 'icon',
+      type: 'image/svg+xml',
+      href: '/tangyuan.svg'
     }
   ],
   meta: [
     { name: 'theme-color', content: '#bbddff' }
   ]
 })
-
-if (!import.meta.server) {
-  useHead({
-    link: [
-      {
-        rel: 'icon',
-        type: 'image/svg+xml',
-        href: iconSvg
-      }
-    ]
-  })
-}
 
 // 花园数据的云端同步（未登录只留本地，登录后上云）
 useGardenCloud()
@@ -109,6 +95,34 @@ onMounted(() => {
 
 useTicker()
 
+watch(
+  () => scheduleStore.currentSectionType,
+  (type, previous) => {
+    if (type !== 'work') {
+      focusMode.exitImmersive()
+      immersiveReveal.value = null
+      return
+    }
+    if (previous !== null && previous !== type && scheduleStore.timerState === TimerState.RUNNING) {
+      focusMode.enterImmersive()
+    }
+  }
+)
+
+const onImmersivePointerMove = (event: MouseEvent) => {
+  if (!focusMode.immersive) {
+    immersiveReveal.value = null
+    return
+  }
+  if (event.clientY <= 104) {
+    immersiveReveal.value = 'top'
+  } else if (event.clientY >= window.innerHeight - 132) {
+    immersiveReveal.value = 'bottom'
+  } else {
+    immersiveReveal.value = null
+  }
+}
+
 // Load appropriate platform module based on runtime config
 if (runtimeConfig.public.PLATFORM === AppPlatform.web) {
   useWeb()
@@ -142,12 +156,15 @@ const progressBarSchedules = computed(() => {
 
 <template>
   <Layout>
-    <section class="h-full overflow-hidden duration-300 ease-in dark:text-gray-50">
+    <section
+      class="h-full overflow-hidden duration-300 ease-in dark:text-gray-50"
+      @mousemove="onImmersivePointerMove"
+    >
       <Title>{{ (remainingTimeString ? `(${remainingTimeString}) ` : '') + pageTitle }}</Title>
       <!-- 背景：纯色 + 格子 -->
       <div class="absolute w-full h-full bg-[#f7fafc] dark:bg-[#151b23] grid-bg" />
       <!-- Progress bar -->
-      <TransitionGroup name="progress-transition" :duration="1000">
+      <TransitionGroup v-if="!focusMode.immersive" name="progress-transition" :duration="1000">
         <TimerProgress
           v-for="(scheduleItem, index) in progressBarSchedules"
           :key="scheduleItem.id"
@@ -165,7 +182,7 @@ const progressBarSchedules = computed(() => {
           'padding-bottom': `${mobileSettingsStore.padding.bottom}px`
         }"
       >
-        <AppBar />
+        <AppBar v-if="!focusMode.immersive || immersiveReveal === 'top'" />
         <TimerSwitch
           key="timerswitch"
           :time-elapsed="scheduleStore.getCurrentItem.timeElapsed"
@@ -173,11 +190,22 @@ const progressBarSchedules = computed(() => {
           :timer-state="scheduleStore.timerState"
           :timer-widget="settingsStore.currentTimer"
           class="flex-grow"
+          :class="{ 'immersive-timer': focusMode.immersive }"
           @tick="state.timeString = $event"
         />
-        <QuickPresets class="mb-6" />
-        <TimerControls class="mb-8" />
+        <QuickPresets v-if="focusMode.entered && !focusMode.immersive" class="mb-6" />
+        <TimerControls v-if="!focusMode.immersive || immersiveReveal === 'bottom'" class="mb-8" />
       </div>
+      <button
+        v-if="focusMode.immersive"
+        type="button"
+        data-testid="immersive-exit"
+        class="fixed bottom-5 right-5 z-30 flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-500 shadow-lg backdrop-blur transition hover:scale-105 hover:text-slate-800"
+        :aria-label="$t('focus.immersive.exit')"
+        @click="focusMode.exitImmersive(); immersiveReveal = null"
+      >
+        <IconArrowsMaximize :size="21" />
+      </button>
       <FullscreenGuard />
       <PlantToast />
       <StartGate />
@@ -237,5 +265,10 @@ body {
   background-image:
     linear-gradient(to right, rgba(187, 221, 255, 0.05) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(187, 221, 255, 0.05) 1px, transparent 1px);
+}
+
+.immersive-timer .timer-display {
+  transform: scale(1.08);
+  filter: drop-shadow(0 16px 28px rgb(47 127 224 / 10%));
 }
 </style>

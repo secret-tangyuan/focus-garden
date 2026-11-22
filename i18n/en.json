@@ -64,8 +64,10 @@
       "mobileSupport": "Due to the rules enforced by the Google Play Store, I cannot show you any links inside the mobile app to donate to the project.",
       "share": "or share the app on social media:",
       "project": "Focus study · this project",
-      "original": "Original project · by Imre Gera",
-      "licenseNote": "Built on FocusTide (MIT). The original copyright and licence notices are preserved."
+      "original": "Timer upstream · Imre Gera",
+      "gardenAssets": "Plant assets upstream · Hamin Yovan Antony",
+      "thanks": "Thanks to the authors of FocusTide and FocusGrove for their open-source work.",
+      "licenseNote": "Original work here is Apache-2.0; the MIT licences and attribution for FocusTide and FocusGrove are preserved."
     },
     "values": {
       "manage": {
@@ -97,8 +99,8 @@
         "_description": ""
       },
       "currentTimer": {
-        "_title": "Timer style",
-        "_description": "",
+        "_title": "Break timer style",
+        "_description": "Work sections always show MM:SS seconds",
         "_values": {
           "traditional": "Traditional",
           "approximate": "Approximate",
@@ -420,6 +422,11 @@
     "workLength": "Focus",
     "pauseLength": "Break",
     "minutes": "min",
+    "hours": "h",
+    "immersive": {
+      "enter": "Enter immersive mode",
+      "exit": "Expand focus controls"
+    },
     "blur": {
       "title": "Timer paused",
       "hint": "The window lost focus — click continue when you are back"

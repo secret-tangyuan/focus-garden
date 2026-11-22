@@ -149,8 +149,6 @@ notificationsStore.updateEnabled()
             <ThemeSettings />
             <SettingsItem :type="Control.Check" path="visuals.darkMode" />
             <Divider />
-            <SettingsItem :type="Control.Option" path="currentTimer" :choices="{traditional: 'traditional', approximate: 'approximate', percentage: 'percentage'}" />
-            <Divider />
             <SettingsItem :type="Control.Check" path="schedule.visibility.enabled" />
             <SettingsItem :type="Control.Check" path="schedule.visibility.showSectionType" :disabled="!settingsStore.schedule.visibility.enabled" />
             <SettingsItem
