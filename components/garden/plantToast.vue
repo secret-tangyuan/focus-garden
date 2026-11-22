@@ -15,7 +15,8 @@ watch(() => garden.lastPlantedAt, (value) => {
     title: String(t('garden.planted')),
     detail: `+${garden.lastPlantedMinutes} ☀️ · ${t('garden.total')} ${garden.totalMinutes} min`,
     tone: 'garden',
-    duration: 3600
+    duration: 3600,
+    focus: 'defer'
   })
 })
 </script>

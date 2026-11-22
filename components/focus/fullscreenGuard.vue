@@ -45,7 +45,8 @@ const backToFullscreen = async () => {
       island.show({
         title: String(t('focus.notice.resumedTitle')),
         detail: String(t('focus.notice.resumedBody')),
-        tone: 'success'
+        tone: 'success',
+        focus: 'silent'
       })
     }
   }

@@ -216,10 +216,8 @@ async def main():
               await page.get_by_test_id("dynamic-island").count() == 1
               and await page.get_by_text("已暂停计时").count() > 0)
         await page.get_by_role("button", name="开始或暂停计时器").click()
-        await page.wait_for_timeout(250)
-        check("恢复计时通知覆盖为灵动岛",
-              await page.get_by_test_id("dynamic-island").count() == 1
-              and await page.get_by_text("继续专注").count() > 0)
+        await page.wait_for_timeout(300)
+        check("恢复计时在专注中不打扰", await page.get_by_text("继续专注").count() == 0)
 
         # 4. 改回 10 秒继续验收，专注中固定显示 mm:ss
         await page.evaluate("""() => {
@@ -309,7 +307,25 @@ async def main():
             login_ok = None
         else:
             login_ok = True
+        # 确保此刻处于专注工作段（否则登录提示本就该正常显示）
+        await page.evaluate("""() => {
+          const app = document.querySelector('#__nuxt').__vue_app__
+          const sc = app.config.globalProperties.$pinia._s.get('schedule')
+          sc.items[0].type = 'work'
+          sc.lockInfo({ index: 0, length: 600000, type: 'work' })
+          sc.items[0].timeElapsed = 0
+          sc.timerState = 1
+        }""")
+        await page.wait_for_timeout(300)
+        # 退出沉浸模式，让顶部工具栏（登录按钮）可见；专注状态本身保持不变
+        await page.evaluate("() => { document.querySelector('#__nuxt').__vue_app__.config.globalProperties.$pinia._s.get('focusMode').immersive = false }")
+        await page.wait_for_timeout(200)
         await page.get_by_label("登录").first.click()
+        await page.wait_for_timeout(600)
+        # 专注中打开登录需要先确认一次
+        if await page.get_by_text("点击可能会干扰注意力").count() > 0:
+            await page.get_by_role("button", name="仍然打开").click()
+            await page.wait_for_timeout(500)
         await page.wait_for_timeout(700)
         check("点「登录」打开站内精简登录面板", await page.get_by_text("统一身份 · 专注学习站").count() > 0)
         await page.locator('[data-testid="login-overlay"]').click()
@@ -317,16 +333,20 @@ async def main():
         check("点登录窗外自动收起", not await page.locator('[data-testid="login-panel"]').is_visible())
         await page.get_by_label("登录").first.click()
         await page.wait_for_timeout(500)
+        # 专注中再次打开登录同样需要确认
+        if await page.get_by_text("点击可能会干扰注意力").count() > 0:
+            await page.get_by_role("button", name="仍然打开").click()
+            await page.wait_for_timeout(500)
         if login_ok is not None:
             await page.get_by_label("用户名").fill(os.environ["FOCUS_TEST_USER"])
             await page.get_by_label("密码").fill(os.environ["FOCUS_TEST_PASSWORD"])
             await page.locator("form").get_by_role("button", name="登录").click()
             await page.wait_for_timeout(1200)
-            check("精简版登录成功（提示已登录）", await page.get_by_text("已登录").count() > 0)
+            logged_in = await page.evaluate("() => document.querySelector('#__nuxt').__vue_app__.config.globalProperties.$pinia.state.value.auth.authenticated")
+            check("精简版登录成功", logged_in is True)
+            check("登录提示在专注中不打扰", await page.get_by_text("已登录").count() == 0)
             check("登录失败没有误报", await page.get_by_text("用户名或密码错误").count() == 0)
             await page.screenshot(path=os.path.join(SHOTS, "10-login.png"))
-            await page.wait_for_timeout(3400)
-            check("登录成功灵动岛自动消失", await page.get_by_text("已登录").count() == 0)
             check("用户名不再常驻工具栏", await page.get_by_text(os.environ["FOCUS_TEST_USER"]).count() == 0)
         else:
             await page.locator('[data-testid="login-overlay"]').click()
@@ -363,6 +383,23 @@ async def main():
         check("设置页有中文条目（如「段落结束」）", "段落结束" in settings_text)
         await page.screenshot(path=os.path.join(SHOTS, "08-settings.png"))
 
+        # 12b. 设置里显示当前系统时间
+        # 先把当前段拉长，避免 10 秒计时在断言中途完成、用「种树」通知覆盖灵动岛
+        await page.evaluate("""() => {
+          const app = document.querySelector('#__nuxt').__vue_app__
+          const sc = app.config.globalProperties.$pinia._s.get('schedule')
+          sc.lockInfo({ index: 0, length: 600000, type: 'work' })
+          sc.items[0].timeElapsed = 0
+        }""")
+        await page.get_by_role("tab", name="显示").click()
+        await page.wait_for_timeout(500)
+        await page.get_by_test_id("system-clock-button").click()
+        await page.wait_for_timeout(600)
+        clock_text = await page.get_by_test_id("system-clock-value").inner_text()
+        check("设置里可显示当前系统时间",
+              re.search(r"\d{2}:\d{2}:\d{2}", clock_text) is not None, clock_text)
+        check("显示时间在专注中不打扰", await page.get_by_text("已显示当前系统时间").count() == 0)
+
         # 13. 关于页三方作者
         await page.get_by_role("tab", name="关于").click()
         await page.wait_for_timeout(600)
@@ -395,6 +432,10 @@ async def main():
             await page.wait_for_timeout(300)
             immersive_after_rest = await page.evaluate("() => document.querySelector('#__nuxt').__vue_app__.config.globalProperties.$pinia.state.value.focusMode.immersive")
             check(f"{label}段自动退出沉浸模式", immersive_after_rest is False)
+            if label == "短休":
+                check("专注结束后补发非关键通知", await page.get_by_text("已显示当前系统时间").count() > 0)
+                await page.wait_for_timeout(3400)
+                check("补发的通知自动消失", await page.get_by_text("已显示当前系统时间").count() == 0)
             await page.get_by_label("设置").click()
             await page.wait_for_timeout(700)
             pending = await page.evaluate("() => { const o = document.querySelector('#__nuxt').__vue_app__.config.globalProperties.$pinia.state.value.openpanels; return o.pending }")

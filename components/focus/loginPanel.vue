@@ -20,14 +20,16 @@ watch(() => auth.authenticated, (authenticated, previous) => {
     island.show({
       title: String(t('login.welcome')),
       detail: auth.displayName,
-      tone: 'success'
+      tone: 'success',
+      focus: 'defer'
     })
     return
   }
   if (!authenticated && previous === true) {
     island.show({
       title: String(t(auth.expired ? 'login.expired' : 'login.loggedOut')),
-      tone: auth.expired ? 'warning' : 'info'
+      tone: auth.expired ? 'warning' : 'info',
+      focus: 'critical'
     })
   }
 })

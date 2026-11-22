@@ -24,7 +24,8 @@ const reset = () => {
   island.show({
     title: String(t('focus.notice.resetTitle')),
     detail: String(t('focus.notice.resetBody')),
-    tone: 'info'
+    tone: 'info',
+    focus: 'silent'
   })
 }
 
@@ -48,7 +49,8 @@ const playPause = async () => {
     island.show({
       title: String(t('focus.notice.resumedTitle')),
       detail: String(t('focus.notice.resumedBody')),
-      tone: 'success'
+      tone: 'success',
+      focus: 'silent'
     })
   }
   if (startingNewSection && scheduleStore.currentSectionType === 'work') {

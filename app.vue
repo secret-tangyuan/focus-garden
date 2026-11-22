@@ -3,10 +3,11 @@ import { defineAsyncComponent } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useHead } from '#imports'
 import { TimerState, useSchedule } from '~~/stores/schedule'
-import { useSettings } from '~~/stores/settings'
+import { Section, useSettings } from '~~/stores/settings'
 import { useAuth } from '~~/stores/auth'
 import { useFocusMode } from '~~/stores/focusMode'
 import { useGardenCloud } from '~~/composables/useGardenCloud'
+import { useIsland } from '~~/stores/island'
 import { IconArrowsMaximize } from '@tabler/icons-vue'
 
 import { useTicker } from '~~/components/ticker'
@@ -36,6 +37,7 @@ const settingsStore = useSettings()
 const mobileSettingsStore = useMobileSettings()
 const scheduleStore = useSchedule()
 const focusMode = useFocusMode()
+const island = useIsland()
 const immersiveReveal = ref<'top' | 'bottom' | null>(null)
 
 const runtimeConfig = useRuntimeConfig()
@@ -95,6 +97,15 @@ onMounted(() => {
 })
 
 useTicker()
+
+// 专注中只允许关键通知：其余暂存到专注结束后补发
+watch(
+  [() => scheduleStore.currentSectionType, () => scheduleStore.timerState],
+  ([type, state]) => {
+    island.setFocusing(type === Section.work && state === TimerState.RUNNING)
+  },
+  { immediate: true }
+)
 
 watch(
   () => scheduleStore.currentSectionType,

@@ -56,6 +56,14 @@
       }
     },
     "scheduleMinTime": "The minimum allowed time is 5 seconds",
+    "clock": {
+      "title": "Current system time",
+      "description": "Show the current date and time of this device",
+      "button": "Show time",
+      "hide": "Hide time",
+      "shown": "Current system time shown",
+      "hidden": "Current system time hidden"
+    },
     "about": {
       "madeby": "Made by Imre Gera",
       "source": "Source code",

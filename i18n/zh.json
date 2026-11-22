@@ -56,6 +56,14 @@
       }
     },
     "scheduleMinTime": "最少允许的时间是 5 秒",
+    "clock": {
+      "title": "当前系统时间",
+      "description": "显示这台设备当前的日期与时间",
+      "button": "显示时间",
+      "hide": "隐藏时间",
+      "shown": "已显示当前系统时间",
+      "hidden": "已隐藏系统时间"
+    },
     "about": {
       "madeby": "由 Imre Gera 开发",
       "source": "源代码",
