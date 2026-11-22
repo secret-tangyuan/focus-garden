@@ -309,10 +309,12 @@ async def main():
             await page.get_by_label("用户名").fill(os.environ["FOCUS_TEST_USER"])
             await page.get_by_label("密码").fill(os.environ["FOCUS_TEST_PASSWORD"])
             await page.locator("form").get_by_role("button", name="登录").click()
-            await page.wait_for_timeout(2500)
+            await page.wait_for_timeout(1200)
             check("精简版登录成功（提示已登录）", await page.get_by_text("已登录").count() > 0)
             check("登录失败没有误报", await page.get_by_text("用户名或密码错误").count() == 0)
             await page.screenshot(path=os.path.join(SHOTS, "10-login.png"))
+            await page.wait_for_timeout(3400)
+            check("登录成功灵动岛自动消失", await page.get_by_text("已登录").count() == 0)
         else:
             await page.locator('[data-testid="login-overlay"]').click()
             await page.wait_for_timeout(300)

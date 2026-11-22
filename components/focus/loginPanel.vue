@@ -9,6 +9,28 @@ const runtimeConfig = useRuntimeConfig()
 const username = ref('')
 const password = ref('')
 const usernameRef = ref<HTMLInputElement | null>(null)
+const showWelcome = ref(false)
+let welcomeTimer: ReturnType<typeof setTimeout> | null = null
+
+const hideWelcome = () => {
+  showWelcome.value = false
+  if (welcomeTimer) {
+    clearTimeout(welcomeTimer)
+    welcomeTimer = null
+  }
+}
+
+watch(() => auth.authenticated, (authenticated, previous) => {
+  if (!authenticated) {
+    hideWelcome()
+    return
+  }
+  if (previous === false) {
+    showWelcome.value = true
+    if (welcomeTimer) { clearTimeout(welcomeTimer) }
+    welcomeTimer = setTimeout(hideWelcome, 3200)
+  }
+})
 
 watch(() => auth.loginOpen, (open) => {
   if (open) {
@@ -64,7 +86,10 @@ const onKeydown = (event: KeyboardEvent) => {
 }
 
 onMounted(() => window.addEventListener('keydown', onKeydown))
-onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKeydown)
+  if (welcomeTimer) { clearTimeout(welcomeTimer) }
+})
 </script>
 
 <template>
@@ -173,22 +198,35 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
       </div>
     </Transition>
 
-    <!-- 已登录提示 -->
-    <Transition
-      enter-from-class="-translate-y-6 opacity-0"
-      enter-active-class="transition duration-300 ease-out"
-      leave-to-class="-translate-y-6 opacity-0"
-      leave-active-class="transition duration-300 ease-in"
+    <!-- 登录成功：一次性灵动岛提示，不常驻 -->
+    <div
+      class="pointer-events-none fixed left-1/2 top-4 z-[91] -translate-x-1/2"
+      aria-live="polite"
     >
-      <div
-        v-if="auth.authenticated && !auth.loginOpen"
-        class="fixed left-1/2 top-6 z-[90] flex -translate-x-1/2 items-center gap-2 rounded-2xl border border-emerald-200 bg-white px-4 py-2.5 text-sm shadow-xl"
+      <Transition
+        appear
+        enter-from-class="dynamic-island-enter-from"
+        enter-active-class="dynamic-island-enter-active"
+        leave-to-class="dynamic-island-leave-to"
+        leave-active-class="dynamic-island-leave-active"
       >
-        <IconCircleCheck :size="18" class="text-emerald-500" />
-        <span class="font-bold text-slate-800">{{ $t('login.welcome') }}</span>
-        <span class="text-xs text-slate-500">{{ auth.displayName }}</span>
-      </div>
-    </Transition>
+        <button
+          v-if="showWelcome && !auth.loginOpen"
+          type="button"
+          class="pointer-events-auto flex items-center gap-2 rounded-full border border-white/10 bg-slate-950 px-4 py-2 text-white shadow-[0_12px_40px_rgba(15,23,42,0.32)]"
+          aria-label="关闭登录提示"
+          @click="hideWelcome"
+        >
+          <span class="relative flex h-2.5 w-2.5">
+            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+            <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400" />
+          </span>
+          <IconCircleCheck :size="16" class="text-emerald-400" />
+          <span class="text-xs font-bold">{{ $t('login.welcome') }}</span>
+          <span class="max-w-32 truncate text-[11px] text-white/65">{{ auth.displayName }}</span>
+        </button>
+      </Transition>
+    </div>
   </Teleport>
 </template>
 
@@ -208,5 +246,20 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
   transition:
     clip-path 280ms cubic-bezier(0.22, 1, 0.36, 1),
     opacity 160ms ease;
+}
+
+.dynamic-island-enter-active,
+.dynamic-island-leave-active {
+  transition:
+    opacity 220ms ease,
+    transform 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 220ms ease;
+}
+
+.dynamic-island-enter-from,
+.dynamic-island-leave-to {
+  opacity: 0;
+  transform: translateY(-12px) scale(0.72);
+  filter: blur(8px);
 }
 </style>
