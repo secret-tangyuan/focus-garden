@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { IconLogin, IconX, IconAlertCircle, IconCircleCheck, IconExternalLink } from '@tabler/icons-vue'
+import { IconLogin, IconLogout, IconUserCircle, IconX, IconAlertCircle, IconCircleCheck, IconExternalLink } from '@tabler/icons-vue'
 import { useAuth } from '~~/stores/auth'
 import { useRuntimeConfig } from '#imports'
 
@@ -10,6 +10,7 @@ const username = ref('')
 const password = ref('')
 const usernameRef = ref<HTMLInputElement | null>(null)
 const showWelcome = ref(false)
+const logoutBusy = ref(false)
 let welcomeTimer: ReturnType<typeof setTimeout> | null = null
 
 const hideWelcome = () => {
@@ -33,7 +34,7 @@ watch(() => auth.authenticated, (authenticated, previous) => {
 })
 
 watch(() => auth.loginOpen, (open) => {
-  if (open) {
+  if (open && !auth.authenticated) {
     auth.error = ''
     nextTick(() => usernameRef.value?.focus())
   }
@@ -65,6 +66,16 @@ const submit = async () => {
   if (ok) {
     password.value = ''
   }
+}
+
+const logoutAccount = async () => {
+  logoutBusy.value = true
+  await auth.logout()
+  username.value = ''
+  password.value = ''
+  hideWelcome()
+  auth.closeLogin()
+  logoutBusy.value = false
 }
 
 /** 完整登录页（注册 / 忘记密码在这里） */
@@ -126,11 +137,16 @@ onBeforeUnmount(() => {
       >
         <div class="mb-3 flex items-center gap-2">
           <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-brand/25 text-brand-strong">
-            <IconLogin :size="16" />
+            <IconUserCircle v-if="auth.authenticated" :size="17" />
+            <IconLogin v-else :size="16" />
           </span>
           <div class="flex-1">
-            <h2 class="text-sm font-bold text-slate-800">{{ $t('login.title') }}</h2>
-            <p class="text-[11px] text-slate-500">{{ $t('login.subtitle') }}</p>
+            <h2 class="text-sm font-bold text-slate-800">
+              {{ auth.authenticated ? $t('login.accountTitle') : $t('login.title') }}
+            </h2>
+            <p class="text-[11px] text-slate-500">
+              {{ auth.authenticated ? $t('login.accountBody') : $t('login.subtitle') }}
+            </p>
           </div>
           <button
             class="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
@@ -141,60 +157,84 @@ onBeforeUnmount(() => {
           </button>
         </div>
 
-        <p
-          v-if="auth.expired"
-          class="mb-2 flex items-start gap-1.5 rounded-xl bg-amber-50 px-2.5 py-1.5 text-[11px] leading-relaxed text-amber-700"
-        >
-          <IconAlertCircle :size="13" class="mt-0.5 shrink-0" />
-          <span>{{ $t('login.expired') }}</span>
-        </p>
-
-        <form class="flex flex-col gap-2" @submit.prevent="submit">
-          <input
-            ref="usernameRef"
-            v-model="username"
-            type="text"
-            autocomplete="username"
-            :placeholder="$t('login.usernamePlaceholder')"
-            :aria-label="$t('login.username')"
-            class="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-brand-strong focus:ring-2 focus:ring-brand/40"
+        <div v-if="auth.authenticated" class="flex flex-col gap-3">
+          <div class="flex items-center gap-3 rounded-2xl bg-slate-50 px-3 py-3">
+            <span class="flex h-10 w-10 items-center justify-center rounded-full bg-brand/25 text-brand-strong">
+              <IconUserCircle :size="22" />
+            </span>
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-sm font-bold text-slate-800">{{ auth.displayName }}</p>
+              <p class="truncate text-[11px] text-slate-400">@{{ auth.user?.username }}</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            data-testid="logout-button"
+            :disabled="logoutBusy"
+            class="flex items-center justify-center gap-1.5 rounded-full bg-red-50 px-4 py-2 text-xs font-bold text-red-600 transition hover:bg-red-100 disabled:opacity-60"
+            @click="logoutAccount"
           >
-          <input
-            v-model="password"
-            type="password"
-            autocomplete="current-password"
-            :placeholder="$t('login.passwordPlaceholder')"
-            :aria-label="$t('login.password')"
-            class="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-brand-strong focus:ring-2 focus:ring-brand/40"
-          >
+            <IconLogout :size="15" />
+            {{ logoutBusy ? $t('login.loggingOut') : $t('login.logout') }}
+          </button>
+        </div>
 
+        <template v-else>
           <p
-            v-if="auth.error"
-            class="flex items-start gap-1.5 rounded-xl bg-red-50 px-2.5 py-1.5 text-[11px] leading-relaxed text-red-600"
+            v-if="auth.expired"
+            class="mb-2 flex items-start gap-1.5 rounded-xl bg-amber-50 px-2.5 py-1.5 text-[11px] leading-relaxed text-amber-700"
           >
             <IconAlertCircle :size="13" class="mt-0.5 shrink-0" />
-            <span>{{ auth.error }}</span>
+            <span>{{ $t('login.expired') }}</span>
           </p>
 
-          <button
-            type="submit"
-            :disabled="auth.busy"
-            class="rounded-full bg-brand-strong px-4 py-2 text-xs font-bold text-white transition hover:brightness-110 disabled:opacity-60"
-          >
-            {{ auth.busy ? $t('login.submitting') : $t('login.submit') }}
-          </button>
-        </form>
+          <form class="flex flex-col gap-2" @submit.prevent="submit">
+            <input
+              ref="usernameRef"
+              v-model="username"
+              type="text"
+              autocomplete="username"
+              :placeholder="$t('login.usernamePlaceholder')"
+              :aria-label="$t('login.username')"
+              class="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-brand-strong focus:ring-2 focus:ring-brand/40"
+            >
+            <input
+              v-model="password"
+              type="password"
+              autocomplete="current-password"
+              :placeholder="$t('login.passwordPlaceholder')"
+              :aria-label="$t('login.password')"
+              class="rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-brand-strong focus:ring-2 focus:ring-brand/40"
+            >
 
-        <p class="mt-2.5 text-center text-[11px] leading-relaxed text-slate-400">
-          {{ $t('login.hintBefore') }}
-          <button
-            class="inline-flex items-center gap-0.5 font-bold text-brand-strong underline-offset-4 transition hover:underline"
-            @click="openFullLogin"
-          >
-            {{ $t('login.hintLink') }}
-            <IconExternalLink :size="11" />
-          </button>
-        </p>
+            <p
+              v-if="auth.error"
+              class="flex items-start gap-1.5 rounded-xl bg-red-50 px-2.5 py-1.5 text-[11px] leading-relaxed text-red-600"
+            >
+              <IconAlertCircle :size="13" class="mt-0.5 shrink-0" />
+              <span>{{ auth.error }}</span>
+            </p>
+
+            <button
+              type="submit"
+              :disabled="auth.busy"
+              class="rounded-full bg-brand-strong px-4 py-2 text-xs font-bold text-white transition hover:brightness-110 disabled:opacity-60"
+            >
+              {{ auth.busy ? $t('login.submitting') : $t('login.submit') }}
+            </button>
+          </form>
+
+          <p class="mt-2.5 text-center text-[11px] leading-relaxed text-slate-400">
+            {{ $t('login.hintBefore') }}
+            <button
+              class="inline-flex items-center gap-0.5 font-bold text-brand-strong underline-offset-4 transition hover:underline"
+              @click="openFullLogin"
+            >
+              {{ $t('login.hintLink') }}
+              <IconExternalLink :size="11" />
+            </button>
+          </p>
+        </template>
       </div>
     </Transition>
 

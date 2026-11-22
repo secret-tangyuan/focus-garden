@@ -1,5 +1,5 @@
 <script setup>
-import { IconSettings, IconChecklist, IconTrees, IconLogin, IconMaximizeOff, IconArrowsMinimize } from '@tabler/icons-vue'
+import { IconSettings, IconChecklist, IconTrees, IconLogin, IconUserCircle, IconMaximizeOff, IconArrowsMinimize } from '@tabler/icons-vue'
 import { ButtonImportance, ButtonTheme } from './base/types/button'
 import CButton from '~~/components/base/uiButton.vue'
 import ScheduleView from '@/components/schedule/scheduleDisplay.vue'
@@ -93,10 +93,10 @@ const settingsStore = useSettings()
       no-content-theme
       no-padding
       inner-class="p-1"
-      :aria-label="$t('appbar.login')"
+      :aria-label="auth.authenticated ? $t('login.accountTitle') : $t('appbar.login')"
       @click="requestAccess('login', $event.currentTarget.getBoundingClientRect())"
     >
-      <span v-if="auth.authenticated" class="text-xs font-bold">{{ auth.displayName }}</span>
+      <IconUserCircle v-if="auth.authenticated" size="24" class="inline-block" />
       <IconLogin v-else size="24" class="inline-block" />
     </CButton>
     <CButton

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { IconMaximize, IconLeaf, IconCheck, IconSquare, IconSettings, IconLogin } from '@tabler/icons-vue'
+import { IconMaximize, IconLeaf, IconCheck, IconSquare, IconSettings, IconLogin, IconUserCircle } from '@tabler/icons-vue'
 import { TimerState, useSchedule } from '~~/stores/schedule'
 import { useFocusMode } from '~~/stores/focusMode'
 import { useSettings } from '~~/stores/settings'
@@ -59,8 +59,9 @@ const skip = () => {
           :aria-label="$t('appbar.login')"
           @click="requestAccess('login', $event.currentTarget.getBoundingClientRect())"
         >
-          <IconLogin :size="16" />
-          {{ auth.authenticated ? auth.displayName : (auth.expired ? $t('login.again') : $t('appbar.login')) }}
+          <IconUserCircle v-if="auth.authenticated" :size="16" />
+          <IconLogin v-else :size="16" />
+          {{ auth.authenticated ? $t('login.accountTitle') : (auth.expired ? $t('login.again') : $t('appbar.login')) }}
         </button>
       </div>
 

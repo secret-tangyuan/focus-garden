@@ -259,6 +259,8 @@ export const useAuth = defineStore('auth', {
       }
       this.authenticated = false
       this.user = null
+      this.scope = ''
+      this.expired = false
     }
   }
 })

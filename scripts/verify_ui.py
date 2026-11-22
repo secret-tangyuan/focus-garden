@@ -315,6 +315,7 @@ async def main():
             await page.screenshot(path=os.path.join(SHOTS, "10-login.png"))
             await page.wait_for_timeout(3400)
             check("登录成功灵动岛自动消失", await page.get_by_text("已登录").count() == 0)
+            check("用户名不再常驻工具栏", await page.get_by_text(os.environ["FOCUS_TEST_USER"]).count() == 0)
         else:
             await page.locator('[data-testid="login-overlay"]').click()
             await page.wait_for_timeout(300)
@@ -579,6 +580,17 @@ async def main():
                                 "unlocked": ["maple", "pine", "cherry", "oak"], "plotLevel": 0,
                                 "streak": 0, "lastSessionDay": "", "lastPlantedAt": 0})
         await page.wait_for_timeout(2400)
+
+        # 16. 账户入口与退出登录
+        await ensure_expanded_ui(page)
+        await page.get_by_label("账户").first.click()
+        await page.wait_for_timeout(400)
+        check("账户窗提供退出登录", await page.get_by_test_id("logout-button").count() == 1)
+        await page.get_by_test_id("logout-button").click()
+        await page.wait_for_timeout(900)
+        logged_in = await page.evaluate("() => document.querySelector('#__nuxt').__vue_app__.config.globalProperties.$pinia.state.value.auth.authenticated")
+        check("退出登录后回到未登录状态", logged_in is False)
+        check("退出后重新显示登录入口", await page.get_by_label("登录").count() > 0)
 
         fatal = [e for e in errors if "favicon" not in e.lower() and "404" not in e]
         check("无前端报错", len(fatal) == 0, "; ".join(fatal[:3]))
