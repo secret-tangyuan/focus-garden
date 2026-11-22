@@ -39,6 +39,48 @@ const breakingChanges: BreakingChange[] = [
 const persistStores = ['settings', 'tasklist', 'tutorials', 'main', 'garden', 'history']
 const storeResetKey = '--reset-store'
 
+/**
+ * 各 store 持久化数据的迁移（在 $patch 之前、作用于原始 JSON）。
+ *
+ * 为什么必须在这一层：$patch 只合并「旧数据里存在的键」，而且数组是整体替换，
+ * store 创建时又会先把默认 state 写回 localStorage —— 「字段缺失」这个信号
+ * 在内存态里已经被默认值占位，在 state 层做的兜底永远不会触发。
+ */
+type StoreMigration = (raw: Record<string, any>) => Record<string, any>
+
+const DEFAULT_UNLOCKED = ['maple', 'pine', 'cherry', 'oak']
+
+const storeMigrations: Record<string, StoreMigration> = {
+  garden: (raw) => {
+    const next = { ...raw }
+
+    // 老用户首次升级到「阳光」体系：把余额折算为 min(总分钟 x 30%, 300)
+    if (next.legacyFolded === undefined && Number(next.totalMinutes) > 0) {
+      const total = Math.round(Number(next.totalMinutes) || 0)
+      const keep = Math.min(Math.round(total * 0.3), 300)
+      next.spentSunlight = Math.max(0, total - keep)
+      next.legacyFolded = true
+    }
+
+    // 已解锁物种：老数据没这个键 → 初始四件套；已有则补齐（老树不该变锁定）
+    const unlocked = Array.isArray(next.unlocked) ? next.unlocked : []
+    next.unlocked = Array.from(new Set([...unlocked, ...DEFAULT_UNLOCKED]))
+
+    // 树：数组整体替换 → 逐棵补字段
+    // 老树（没有 withered 字段）免疫枯萎；新树按自己的 immune 走
+    next.trees = Array.isArray(next.trees)
+      ? next.trees.map((tree: any) => ({
+          ...tree,
+          water: Number.isFinite(tree?.water) ? tree.water : 0,
+          manual: typeof tree?.manual === 'boolean' ? tree.manual : false,
+          immune: typeof tree?.immune === 'boolean' ? tree.immune : tree?.withered === undefined
+        }))
+      : []
+
+    return next
+  }
+}
+
 /** Get the persistence key of the store by its ID */
 const getStorePersistenceKey = (id: string) => `persist-${id}`
 
@@ -73,7 +115,13 @@ function restoreStore (store: Store) {
     return
   }
 
-  const stateToRestore = JSON.parse(lsStore as string)
+  let stateToRestore = JSON.parse(lsStore as string)
+
+  // 迁移必须在 $patch 之前、且作用在原始 JSON 上
+  const migrate = storeMigrations[store.$id]
+  if (migrate && stateToRestore !== null && typeof stateToRestore === 'object') {
+    stateToRestore = migrate(stateToRestore)
+  }
 
   if (stateToRestore !== null) {
     onMounted(() => {

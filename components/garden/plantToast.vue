@@ -1,14 +1,17 @@
 <script setup lang="ts">
-import { IconTrees } from '@tabler/icons-vue'
+import { IconTrees, IconSun } from '@tabler/icons-vue'
 import { useGarden } from '~~/stores/garden'
 
 const garden = useGarden()
 const visible = ref(false)
 const shownAt = ref(0)
+/** 本次获得的阳光（专注分钟数） */
+const gainedSunlight = ref(0)
 
 watch(() => garden.lastPlantedAt, (value) => {
   if (!value || value === shownAt.value) { return }
   shownAt.value = value
+  gainedSunlight.value = garden.lastPlantedMinutes
   visible.value = true
   setTimeout(() => { visible.value = false }, 3200)
 })
@@ -30,6 +33,9 @@ watch(() => garden.lastPlantedAt, (value) => {
           <IconTrees :size="20" />
         </span>
         <span class="font-bold text-slate-800">{{ $t('garden.planted') }}</span>
+        <span class="flex items-center gap-1 text-xs font-bold text-amber-600">
+          <IconSun :size="14" />+{{ gainedSunlight }}
+        </span>
         <span class="text-xs text-slate-500">{{ $t('garden.total') }} {{ garden.totalMinutes }} min</span>
       </div>
     </Transition>

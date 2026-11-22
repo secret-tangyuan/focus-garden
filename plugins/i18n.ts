@@ -60,6 +60,8 @@ export default defineNuxtPlugin(({ vueApp, $pinia }) => {
     legacy: false,
     globalInjection: true,
     locale: 'zh',
+    // 未翻译的新键回落到英文，避免显示原始 key
+    fallbackLocale: 'en',
     messages
   })
 

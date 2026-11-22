@@ -10,6 +10,7 @@
 """
 import asyncio
 import os
+import time
 import re
 import sys
 
@@ -41,6 +42,66 @@ def set_section(page, section_type, running=True):
       s.timerState = running ? 1 : 0
       return s.items[0].type
     }""", [section_type, running])
+
+
+def garden_state(page):
+    """读取 garden store 的状态"""
+    return page.evaluate("""() => {
+      const app = document.querySelector('#__nuxt').__vue_app__
+      const g = app.config.globalProperties.$pinia.state.value.garden
+      return JSON.parse(JSON.stringify(g))
+    }""")
+
+
+def garden_store(page):
+    """拿到 garden store 实例（用于调用 action）"""
+    return page.evaluate("""() => {
+      const app = document.querySelector('#__nuxt').__vue_app__
+      const g = app.config.globalProperties.$pinia._s.get('garden')
+      return {
+        total: g.totalMinutes,
+        spent: g.spentSunlight,
+        sunlight: g.sunlight,
+        trees: g.trees.length,
+        ids: g.trees.map(t => t.id),
+        stage: g.trees.length ? g.stageOf(g.trees[0]) : -1,
+        species: g.trees.length ? g.trees[0].species : null,
+        unlocked: g.unlocked.slice(),
+        plotLevel: g.plotLevel,
+        capacity: g.plotCapacity
+      }
+    }""")
+
+
+def call_garden(page, method, args=None):
+    """调用 garden store 的 action"""
+    return page.evaluate("""([m, a]) => {
+      const app = document.querySelector('#__nuxt').__vue_app__
+      const g = app.config.globalProperties.$pinia._s.get('garden')
+      const before = { total: g.totalMinutes, spent: g.spentSunlight, trees: g.trees.length }
+      const res = g[m](...(a || []))
+      return {
+        before,
+        res: res === undefined ? null : res,
+        after: { total: g.totalMinutes, spent: g.spentSunlight, trees: g.trees.length,
+                 ids: g.trees.map(t => t.id),
+                 stage: g.trees.length ? g.stageOf(g.trees[0]) : -1,
+                 water: g.trees.length ? (g.trees[0].water || 0) : 0,
+                 withered: g.trees.length ? !!g.trees[0].withered : false,
+                 species: g.trees.length ? g.trees[0].species : null,
+                 unlocked: g.unlocked.slice(), plotLevel: g.plotLevel, capacity: g.plotCapacity }
+      }
+    }""", [method, args or []])
+
+
+def set_garden(page, patch):
+    """直接改 garden store 的 state（造夹具用）"""
+    return page.evaluate("""(patch) => {
+      const app = document.querySelector('#__nuxt').__vue_app__
+      const g = app.config.globalProperties.$pinia.state.value.garden
+      Object.assign(g, patch)
+      return true
+    }""", patch)
 
 
 def close_panels(page):
@@ -248,6 +309,144 @@ async def main():
             await page.screenshot(path=os.path.join(SHOTS, f"20-break-{section_type}-no-distract.png"))
             await close_panels(page)
             await page.wait_for_timeout(400)
+
+
+        # 14. 花园玩法：阳光 / 种树 / 浇水 / 解锁 / 扩建 / 枯萎
+        await close_panels(page)
+        await set_section(page, "work", running=False)
+        await page.wait_for_timeout(300)
+
+        await page.get_by_label("我的森林").click()
+        await page.wait_for_timeout(700)
+        check("花园面板打开", await page.locator("aside").first.is_visible())
+        for tid, name in (("tab-forest", "森林"), ("tab-gardening", "园艺"), ("tab-records", "记录")):
+            check(f"花园面板有「{name}」标签", await page.locator(f'[data-testid="{tid}"]').count() > 0)
+
+        # 14.1 完成一段专注 → 阳光 = 该段分钟数
+        before = await garden_store(page)
+        res = await call_garden(page, "completeFocus", [25])
+        after = res["after"]
+        check("完成一段专注后阳光 = 该段分钟数",
+              (after["total"] - after["spent"]) - (before["total"] - before["spent"]) == 25,
+              f'{before["total"] - before["spent"]} -> {after["total"] - after["spent"]}')
+        check("完成一段专注后自动种一棵树", after["trees"] == before["trees"] + 1)
+
+        # 14.2 阳光不足：按钮禁用 + 差额提示
+        await set_garden(page, {"totalMinutes": 3, "spentSunlight": 0, "trees": []})
+        await page.wait_for_timeout(400)
+        await page.locator('[data-testid="tab-gardening"]').click()
+        await page.wait_for_timeout(500)
+        check("阳光不足时「种一棵树」禁用",
+              await page.locator('[data-testid="plant-manual"]').is_disabled())
+        hint = await page.locator('[data-testid="sunlight-hint"]').first.inner_text()
+        check("显示差额提示（含 37）", "37" in hint, hint)
+        unlock_btn = page.locator('[data-testid="shop-unlock"]').first
+        check("阳光不足时解锁按钮禁用", await unlock_btn.is_disabled())
+
+        # 14.3 手动种树：+1 棵、起始形态 1、扣 40 阳光
+        await set_garden(page, {"totalMinutes": 100, "spentSunlight": 0, "trees": [], "sessions": 10})
+        await page.wait_for_timeout(400)
+        await page.locator('[data-testid="species-chip"][data-species="oak"]').click()
+        await page.wait_for_timeout(200)
+        res = await call_garden(page, "plantManual", ["oak"])
+        after = res["after"]
+        check("手动种树后多一棵", after["trees"] == 1, str(after["trees"]))
+        check("手动种树扣 40 阳光", after["spent"] == 40, str(after["spent"]))
+        check("手动种的树起始形态为 1", after["stage"] == 1, str(after["stage"]))
+
+        # 14.4 浇水：形态 +1、按形态定价、第 3 次被拒（每树最多 2 次）
+        tree_id = (await garden_store(page))["ids"][0]
+        res = await call_garden(page, "waterTree", [tree_id])
+        after = res["after"]
+        check("浇水后形态 +1", after["stage"] == 2, str(after["stage"]))
+        check("浇水扣 20 阳光（形态 1 时）", after["spent"] == 60, str(after["spent"]))
+        res2 = await call_garden(page, "waterTree", [tree_id])
+        res3 = await call_garden(page, "waterTree", [tree_id])
+        check("每棵树最多浇 2 次（第 3 次不生效）", res3["after"]["water"] == 2, str(res3["after"]["water"]))
+        check("被拒绝的浇水不扣阳光", res3["after"]["spent"] == res2["after"]["spent"], str(res3["after"]["spent"]))
+
+        # 14.5 商店解锁 + 自动轮换能选中
+        await set_garden(page, {"totalMinutes": 1000, "spentSunlight": 0, "unlocked": ["maple", "pine", "cherry", "oak"]})
+        await page.wait_for_timeout(400)
+        res = await call_garden(page, "unlockSpecies", ["sequoia"])
+        check("解锁物种成功", "sequoia" in res["after"]["unlocked"], str(res["after"]["unlocked"]))
+        check("解锁扣 250 阳光", res["after"]["spent"] == 250, str(res["after"]["spent"]))
+        await set_garden(page, {"unlocked": ["sequoia"], "trees": [], "sessions": 0})
+        res = await call_garden(page, "completeFocus", [25])
+        check("自动轮换优先选新解锁的物种", res["after"]["species"] == "sequoia", str(res["after"]["species"]))
+
+        # 14.6 扩建花园：扣费 + 地块容量提升
+        await set_garden(page, {"totalMinutes": 1000, "spentSunlight": 0, "trees": []})
+        await page.wait_for_timeout(300)
+        res = await call_garden(page, "expandGarden")
+        check("扩建扣 150 阳光", res["after"]["spent"] == 150, str(res["after"]["spent"]))
+        check("扩建后地块容量提升", res["after"]["capacity"] == 60, str(res["after"]["capacity"]))
+
+        # 14.7 枯萎：7 天未登录 → 枯萎，浇水复活
+        await set_garden(page, {"totalMinutes": 500, "spentSunlight": 0, "sessions": 10,
+                                "trees": [{"id": 9001, "species": "oak", "bornAtSession": 10,
+                                           "minutes": 25, "plantedAt": 1700000000000,
+                                           "water": 0, "manual": False, "withered": False}],
+                                "lastTendAt": int(time.time() * 1000) - 8 * 86400000})
+        await page.wait_for_timeout(300)
+        res = await call_garden(page, "checkWither")
+        check("7 天未登录后树枯萎", res["after"]["withered"] is True, str(res["after"]["withered"]))
+        res = await call_garden(page, "waterTree", [9001])
+        check("浇水后复活", res["after"]["withered"] is False, str(res["after"]["withered"]))
+
+        # 14.8 老用户免疫枯萎（immune 的树不会被判枯萎）
+        await set_garden(page, {"totalMinutes": 500, "spentSunlight": 0, "sessions": 10,
+                                "trees": [{"id": 9002, "species": "maple", "bornAtSession": 10,
+                                           "minutes": 25, "plantedAt": 1700000000000,
+                                           "water": 0, "manual": False, "immune": True}],
+                                "lastTendAt": int(time.time() * 1000) - 8 * 86400000})
+        await page.wait_for_timeout(300)
+        res = await call_garden(page, "checkWither")
+        check("老用户已有的树免疫枯萎", res["after"]["withered"] is False, str(res["after"]["withered"]))
+
+        # 14.9 12 个物种都能渲染出非空 SVG
+        await set_garden(page, {"unlocked": ["maple", "pine", "cherry", "oak", "bamboo", "sunflower",
+                                             "palm", "cactus", "willow", "lavender", "bonsai", "sequoia"]})
+        await page.locator('[data-testid="tab-gardening"]').click()
+        await page.wait_for_timeout(600)
+        chips = await page.evaluate("""() => [...document.querySelectorAll('[data-testid="species-chip"]')]
+            .map(el => ({ id: el.dataset.species, kids: el.querySelector('svg') ? el.querySelector('svg').childElementCount : 0 }))""")
+        check("12 个物种都能选中", len(chips) == 12, str(len(chips)))
+        check("12 个物种都渲染出非空 SVG", all(c["kids"] > 0 for c in chips),
+              str([c for c in chips if c["kids"] == 0]))
+
+        # 14.10 老数据迁移（独立 context，页面加载前注入旧结构）
+        ctx2 = await browser.new_context(viewport={"width": 1440, "height": 900})
+        await ctx2.add_init_script("""
+          try {
+            localStorage.setItem('persist-garden', JSON.stringify({
+              trees: [{ id: 1, species: 'maple', bornAtSession: 0, minutes: 25, plantedAt: 1700000000000 }],
+              sessions: 9, totalMinutes: 300,
+              lastPlantedAt: 1700000000000, lastSessionDay: '2026-11-21', streak: 3
+            }))
+          } catch (e) {}
+        """)
+        page2 = await ctx2.new_page()
+        errors2 = []
+        page2.on("pageerror", lambda e: errors2.append(str(e)))
+        await page2.goto(BASE, wait_until="networkidle")
+        await page2.wait_for_timeout(1500)
+        g2 = await garden_state(page2)
+        check("老数据不报错", len(errors2) == 0, "; ".join(errors2[:2]))
+        check("老树的树还在", len(g2.get("trees", [])) == 1, str(len(g2.get("trees", []))))
+        check("老树 water 兜底为 0", (g2.get("trees") or [{}])[0].get("water", 0) == 0)
+        check("老树免疫枯萎", (g2.get("trees") or [{}])[0].get("immune") is True)
+        check("老树物种仍在已解锁列表", "maple" in g2.get("unlocked", []), str(g2.get("unlocked")))
+        check("老用户阳光按 30% 折算（300 -> 90）",
+              g2.get("totalMinutes", 0) - g2.get("spentSunlight", 0) == 90,
+              f'{g2.get("totalMinutes")} - {g2.get("spentSunlight")}')
+        await page2.reload(wait_until="networkidle")
+        await page2.wait_for_timeout(1500)
+        g3 = await garden_state(page2)
+        check("刷新后折算不重复发生",
+              g3.get("totalMinutes", 0) - g3.get("spentSunlight", 0) == 90,
+              f'{g3.get("totalMinutes")} - {g3.get("spentSunlight")}')
+        await ctx2.close()
 
         fatal = [e for e in errors if "favicon" not in e.lower() and "404" not in e]
         check("无前端报错", len(fatal) == 0, "; ".join(fatal[:3]))

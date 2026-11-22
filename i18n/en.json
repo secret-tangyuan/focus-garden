@@ -437,10 +437,59 @@
     }
   },
   "garden": {
+    "sunlight": "Sunlight",
+    "streak": "Day streak",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "hintShort": "{n} more sunlight needed ≈ {n} more minutes of focus",
+    "priceRule": "1 sunlight = 1 minute of focus; every gardening action is priced in focus minutes.",
+    "witherRule": "Trees wither after 7 days without signing in or completing a focus session; one watering brings them back.",
+    "plantTitle": "Plant a tree by hand",
+    "plantCost": "Plant a tree · ☀️{n}",
+    "plotFull": "The garden is full. Expand it in the Gardening tab first.",
+    "shop": "Sunlight shop",
+    "shopHint": "Spend sunlight to unlock new species; unlocked species get picked automatically.",
+    "unlock": "Unlock",
+    "keepFocusing": "Keep focusing",
+    "expand": "Expand the garden",
+    "expandHint": "Expanding raises the plot capacity — the long-term home for your sunlight.",
+    "expandCost": "☀️{n}",
+    "expandMax": "Max level",
+    "plot": "Plots {a} / {b}",
+    "treeCount": "{n} trees in total",
+    "selectTree": "Tap a tree to water it or see details.",
+    "stage": "Stage {a}/{b}",
+    "withered": "Withered",
+    "witheredHint": "Withered — water it once to bring it back.",
+    "waterHint": "Watering grows it by one stage right away.",
+    "waterLimit": "Watering limit reached (max {n} times per tree).",
+    "waterCost": "Water · ☀️{n}",
+    "guide": {
+      "title": "How it works",
+      "step1": "① Finish a focus session → earn sunlight (1 minute = 1 sunlight)",
+      "step2": "② Sunlight buys: trees / new species / watering",
+      "step3": "③ Tap a tree to water it; 7 days away makes it wither",
+      "close": "Got it"
+    },
+    "species": {
+      "maple": "Maple",
+      "pine": "Pine",
+      "cherry": "Cherry",
+      "oak": "Oak",
+      "bamboo": "Bamboo",
+      "sunflower": "Sunflower",
+      "palm": "Palm",
+      "cactus": "Cactus",
+      "willow": "Willow",
+      "lavender": "Lavender",
+      "bonsai": "Bonsai",
+      "sequoia": "Sequoia"
+    },
     "title": "My forest",
-    "subtitle": "Every focus session plants a tree",
+    "subtitle": "Trade focus for sunlight and grow a garden",
     "tabs": {
       "forest": "Forest",
+      "gardening": "Gardening",
       "records": "Records"
     },
     "stats": {
@@ -449,7 +498,7 @@
       "streak": "Day streak"
     },
     "empty": "No trees yet",
-    "emptyHint": "Finish a focus countdown to plant the first tree.",
+    "emptyHint": "Finish a focus countdown to plant your first tree and earn sunlight.",
     "planted": "A tree was planted",
     "total": "Total focus",
     "weekly": "Last 7 days",
@@ -461,7 +510,7 @@
     "abandoned": "Stopped",
     "clear": "Clear",
     "clearConfirm": "Confirm clear?",
-    "hint": "Stored in this browser only. Clearing cannot be undone."
+    "hint": "Stored in this browser only; clearing resets focus records, sunlight and species."
   },
   "login": {
     "title": "Sign in",

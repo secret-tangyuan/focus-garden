@@ -431,10 +431,59 @@
     }
   },
   "garden": {
+    "sunlight": "阳光",
+    "streak": "连续天数",
+    "today": "今天",
+    "yesterday": "昨天",
+    "hintShort": "还差 {n} 阳光 ≈ {n} 分钟专注",
+    "priceRule": "1 阳光 = 1 分钟专注；所有园艺操作按专注分钟计价。",
+    "witherRule": "连续 7 天没登录也没完成专注，树会枯萎；浇水一次即可复活。",
+    "plantTitle": "手动种一棵树",
+    "plantCost": "种一棵树 · ☀️{n}",
+    "plotFull": "花园已满，去「园艺」扩建后再种。",
+    "shop": "阳光商店",
+    "shopHint": "用阳光解锁新树种，解锁后会被自动轮换选中。",
+    "unlock": "解锁",
+    "keepFocusing": "继续专注",
+    "expand": "扩建花园",
+    "expandHint": "扩建可以提高地块容量，也是阳光唯一的长期去处。",
+    "expandCost": "☀️{n}",
+    "expandMax": "已满级",
+    "plot": "地块 {a} / {b}",
+    "treeCount": "共 {n} 棵",
+    "selectTree": "点一棵树可以浇水或查看详情。",
+    "stage": "形态 {a}/{b}",
+    "withered": "枯萎",
+    "witheredHint": "已枯萎，浇水一次即可复活。",
+    "waterHint": "浇水可以让它立刻长大一级。",
+    "waterLimit": "浇灌次数已用完（每棵树最多 {n} 次）。",
+    "waterCost": "浇水 · ☀️{n}",
+    "guide": {
+      "title": "怎么玩",
+      "step1": "① 完成一段专注 → 得阳光（1 分钟 = 1 阳光）",
+      "step2": "② 阳光能：种树 / 解锁树种 / 浇水催熟",
+      "step3": "③ 点树可浇水；连续 7 天不登录会枯萎",
+      "close": "知道了"
+    },
+    "species": {
+      "maple": "枫树",
+      "pine": "杉树",
+      "cherry": "樱花",
+      "oak": "橡树",
+      "bamboo": "竹子",
+      "sunflower": "向日葵",
+      "palm": "棕榈",
+      "cactus": "仙人掌",
+      "willow": "柳树",
+      "lavender": "薰衣草",
+      "bonsai": "盆景",
+      "sequoia": "红杉"
+    },
     "title": "我的森林",
-    "subtitle": "每一次专注都会种下一棵树",
+    "subtitle": "专注换阳光，种出你的花园",
     "tabs": {
       "forest": "森林",
+      "gardening": "园艺",
       "records": "记录"
     },
     "stats": {
@@ -443,7 +492,7 @@
       "streak": "连续天数"
     },
     "empty": "还没有树",
-    "emptyHint": "完成一段专注倒计时，就会在这里种下第一棵树。",
+    "emptyHint": "完成一段专注倒计时，就会在这里种下第一棵树，并获得阳光。",
     "planted": "种下了一棵树",
     "total": "累计专注",
     "weekly": "最近 7 天",
@@ -455,7 +504,7 @@
     "abandoned": "未完成",
     "clear": "清空",
     "clearConfirm": "确认清空？",
-    "hint": "数据保存在本机浏览器，清空后不可恢复。"
+    "hint": "数据保存在本机浏览器；清空后专注记录、阳光、物种全部重来。"
   },
   "login": {
     "title": "登录",

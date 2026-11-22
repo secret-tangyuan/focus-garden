@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { useRuntimeConfig } from '#imports'
+import { useGarden } from '~~/stores/garden'
 
 export interface SessionUser {
   username: string
@@ -230,6 +231,8 @@ export const useAuth = defineStore('auth', {
         await this.fetchSession()
         this.scheduleRenew('tmp')
         this.loginOpen = false
+        // 登录也算打理花园：重置枯萎倒计时
+        useGarden().touchByLogin()
         return true
       } catch (err) {
         console.warn('login failed', err)

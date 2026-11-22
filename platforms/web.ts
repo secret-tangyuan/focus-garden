@@ -53,7 +53,8 @@ export function useWeb () {
       const finishedItem = scheduleStore.getSchedule[0]
       if (finishedItem.type === 'work') {
         const minutes = Math.round((finishedItem.length ?? 0) / 60000)
-        gardenStore.plantTree(minutes)
+        // 完成一段专注：发阳光（1 分钟 = 1 阳光）+ 自动种一棵树
+        gardenStore.completeFocus(minutes)
         historyStore.recordFocus(findLastStartTime(), minutes, true)
       }
     }
