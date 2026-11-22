@@ -7,7 +7,10 @@
 set -euo pipefail
 
 WIN_ROOT="${WIN_ROOT:-/mnt/c/Users/Administrator/Desktop/works/web_work}"
-ENV_FILE="${WSL_ENV_FILE:-$WIN_ROOT/focus-garden/deploy/env/local.env}"
+# /mnt/c 的文件视图会间歇性读到旧内容（变量时有时无），
+# 因此本地测试环境优先用 WSL 本地固定配置 /srv/focus-garden.local.env。
+ENV_FILE="${WSL_ENV_FILE:-/srv/focus-garden.local.env}"
+[ -f "$ENV_FILE" ] || ENV_FILE="$WIN_ROOT/focus-garden/deploy/env/local.env"
 SKIP_BUILD=0
 [ "${1:-}" = "--skip-build" ] && SKIP_BUILD=1
 
@@ -50,13 +53,23 @@ if [ ! -d "$SRC/$NAME" ]; then
   mkdir -p "$SRC/$NAME"
 fi
 
-log "同步工作区"
-rsync -a --delete \
-  --exclude '.git/' \
-  --exclude 'node_modules/' \
-  --exclude '.output/' \
-  --exclude '.nuxt/' \
-  "$WIN_ROOT/$NAME/" "$SRC/$NAME/"
+# bash 是按字节偏移增量读取脚本的：rsync 覆盖脚本自身后，正在运行的实例
+# 会读到错位的内容（表现为「脚本改了却没生效」）。
+# 因此顺序必须是：先同步 → 再把自己复制到 /tmp 执行，运行中的实例就不会被换掉。
+if [ -z "${FOCUS_BUILD_REEXEC:-}" ]; then
+  export FOCUS_BUILD_REEXEC=1
+  log "同步工作区"
+  rsync -a --delete \
+    --exclude '.git/' \
+    --exclude 'node_modules/' \
+    --exclude '.output/' \
+    --exclude '.nuxt/' \
+  --exclude 'scripts/build_wsl_test_env.sh' \
+    "$WIN_ROOT/$NAME/" "$SRC/$NAME/"
+  _self="$(mktemp /tmp/focus-build.XXXXXX.sh)"
+  cp "$0" "$_self"
+  exec bash "$_self" "$@"
+fi
 
 # Windows 工作区是 CRLF，统一成 LF
 find "$SRC/$NAME" -type d \( -name .git -o -name node_modules -o -name .output -o -name .nuxt \) -prune -o \
@@ -78,6 +91,7 @@ if [ "$SKIP_BUILD" -eq 0 ]; then
   NUXT_PUBLIC_IDENTITY_API_SESSION="$IDENTITY_API_SESSION" \
   NUXT_PUBLIC_IDENTITY_API_LOGOUT="$IDENTITY_API_LOGOUT" \
   NUXT_PUBLIC_IDENTITY_API_RENEW="$IDENTITY_API_RENEW" \
+  NUXT_PUBLIC_IDENTITY_API_GARDEN="$IDENTITY_API_GARDEN" \
   npm run generate
 fi
 
@@ -99,6 +113,7 @@ sed -e "s#__FOCUS_HOST__#$FOCUS_HOST#g" \
     -e "s#__IDENTITY_API_SESSION__#$IDENTITY_API_SESSION#g" \
     -e "s#__IDENTITY_API_LOGOUT__#$IDENTITY_API_LOGOUT#g" \
     -e "s#__IDENTITY_API_RENEW__#$IDENTITY_API_RENEW#g" \
+    -e "s#__IDENTITY_API_GARDEN__#$IDENTITY_API_GARDEN#g" \
     "$TPL" > /tmp/$NAME.conf
 NGINX_SITES_DIR="${NGINX_SITES_DIR:-/etc/nginx/sites-available}"
 sudo -n install -o root -g root -m 644 /tmp/$NAME.conf "$NGINX_SITES_DIR/$NAME.conf"

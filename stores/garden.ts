@@ -301,6 +301,51 @@ export const useGarden = defineStore('garden', {
       return changed
     },
 
+    /** 导出可上云的快照（只含可序列化的纯数据） */
+    exportState () {
+      return {
+        v: 1,
+        trees: this.trees.slice(0, 500),
+        sessions: this.sessions,
+        totalMinutes: this.totalMinutes,
+        spentSunlight: this.spentSunlight,
+        unlocked: this.unlocked.slice(),
+        plotLevel: this.plotLevel,
+        streak: this.streak,
+        lastSessionDay: this.lastSessionDay,
+        lastPlantedAt: this.lastPlantedAt,
+        lastTendAt: this.lastTendAt
+      }
+    },
+
+    /** 用云端快照覆盖本地（登录后以云端为准；未登录时根本不会走到这里） */
+    applyState (state: unknown): boolean {
+      if (!state || typeof state !== 'object') { return false }
+      const raw = state as Record<string, any>
+
+      const trees = Array.isArray(raw.trees) ? raw.trees : []
+      this.trees = trees.map((tree: any) => ({
+        ...tree,
+        water: Number.isFinite(tree?.water) ? tree.water : 0,
+        manual: tree?.manual === true,
+        immune: tree?.immune === true,
+        withered: tree?.withered === true
+      }))
+
+      this.sessions = Math.max(0, Math.round(Number(raw.sessions) || 0))
+      this.totalMinutes = Math.max(0, Math.round(Number(raw.totalMinutes) || 0))
+      this.spentSunlight = Math.max(0, Math.round(Number(raw.spentSunlight) || 0))
+      this.unlocked = Array.isArray(raw.unlocked) && raw.unlocked.length
+        ? raw.unlocked.filter((id: any) => typeof id === 'string')
+        : [...DEFAULT_UNLOCKED]
+      this.plotLevel = Math.max(0, Math.round(Number(raw.plotLevel) || 0))
+      this.streak = Math.max(0, Math.round(Number(raw.streak) || 0))
+      this.lastSessionDay = String(raw.lastSessionDay || '')
+      this.lastPlantedAt = Math.max(0, Math.round(Number(raw.lastPlantedAt) || 0))
+      this.lastTendAt = Math.max(0, Math.round(Number(raw.lastTendAt) || Date.now()))
+      return true
+    },
+
     /** 记录一次登录（登录也算「打理花园」，重置枯萎倒计时） */
     touchByLogin () {
       this.lastTendAt = Date.now()

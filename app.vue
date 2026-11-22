@@ -5,6 +5,7 @@ import { useHead } from '#imports'
 import { useSchedule } from '~~/stores/schedule'
 import { useSettings } from '~~/stores/settings'
 import { useAuth } from '~~/stores/auth'
+import { useGardenCloud } from '~~/composables/useGardenCloud'
 
 import { useTicker } from '~~/components/ticker'
 import { useWeb } from '~~/platforms/web'
@@ -74,6 +75,9 @@ if (!import.meta.server) {
     ]
   })
 }
+
+// 花园数据的云端同步（未登录只留本地，登录后上云）
+useGardenCloud()
 
 onMounted(() => {
   // 读取统一身份会话（精简登录用）

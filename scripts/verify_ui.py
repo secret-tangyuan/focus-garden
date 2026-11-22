@@ -296,13 +296,16 @@ async def main():
         # 11b. 休息段（短休 / 长休）：点「设置」直接打开，不弹「可能干扰专注」
         for section_type, label in (("shortpause", "短休"), ("longpause", "长休")):
             await close_panels(page)
+            await page.wait_for_timeout(500)
             await long_sections(page)
             await set_section(page, section_type, running=True)
             await page.wait_for_timeout(300)
             await page.get_by_label("设置").click()
             await page.wait_for_timeout(700)
+            pending = await page.evaluate("() => { const o = document.querySelector('#__nuxt').__vue_app__.config.globalProperties.$pinia.state.value.openpanels; return o.pending }")
             check(f"{label}段点「设置」不弹干扰提示",
-                  await page.get_by_text("点击可能会干扰注意力").count() == 0)
+                  await page.get_by_text("点击可能会干扰注意力").count() == 0 and pending is None,
+                  f"pending={pending}")
             check(f"{label}段点「设置」直接打开面板",
                   await page.locator("section.fixed.z-\[97\]").count() > 0
                   or await page.locator("aside").count() > 0)
@@ -332,7 +335,8 @@ async def main():
         check("完成一段专注后自动种一棵树", after["trees"] == before["trees"] + 1)
 
         # 14.2 阳光不足：按钮禁用 + 差额提示
-        await set_garden(page, {"totalMinutes": 3, "spentSunlight": 0, "trees": []})
+        await set_garden(page, {"totalMinutes": 3, "spentSunlight": 0, "trees": [],
+                                "unlocked": ["maple", "pine", "cherry", "oak"], "plotLevel": 0})
         await page.wait_for_timeout(400)
         await page.locator('[data-testid="tab-gardening"]').click()
         await page.wait_for_timeout(500)
@@ -344,7 +348,8 @@ async def main():
         check("阳光不足时解锁按钮禁用", await unlock_btn.is_disabled())
 
         # 14.3 手动种树：+1 棵、起始形态 1、扣 40 阳光
-        await set_garden(page, {"totalMinutes": 100, "spentSunlight": 0, "trees": [], "sessions": 10})
+        await set_garden(page, {"totalMinutes": 100, "spentSunlight": 0, "trees": [], "sessions": 10,
+                                "unlocked": ["maple", "pine", "cherry", "oak"], "plotLevel": 0})
         await page.wait_for_timeout(400)
         await page.locator('[data-testid="species-chip"][data-species="oak"]').click()
         await page.wait_for_timeout(200)
@@ -376,7 +381,8 @@ async def main():
         check("自动轮换优先选新解锁的物种", res["after"]["species"] == "sequoia", str(res["after"]["species"]))
 
         # 14.6 扩建花园：扣费 + 地块容量提升
-        await set_garden(page, {"totalMinutes": 1000, "spentSunlight": 0, "trees": []})
+        await set_garden(page, {"totalMinutes": 1000, "spentSunlight": 0, "trees": [],
+                                "unlocked": ["maple", "pine", "cherry", "oak"], "plotLevel": 0})
         await page.wait_for_timeout(300)
         res = await call_garden(page, "expandGarden")
         check("扩建扣 150 阳光", res["after"]["spent"] == 150, str(res["after"]["spent"]))
@@ -447,6 +453,43 @@ async def main():
               g3.get("totalMinutes", 0) - g3.get("spentSunlight", 0) == 90,
               f'{g3.get("totalMinutes")} - {g3.get("spentSunlight")}')
         await ctx2.close()
+
+
+        # 15. 云端同步：登录后上云，未登录留在本地
+        cloud = await page.evaluate("""async () => {
+          const r = await fetch('/auth/garden', { credentials: 'include' })
+          let body = {}
+          try { body = await r.json() } catch (e) { body = {} }
+          return { status: r.status, ok: body.ok, state: body.state }
+        }""")
+        check("登录后可读自己的云端存档", cloud["status"] == 200 and cloud["ok"] is True, str(cloud["status"]))
+
+        await set_garden(page, {"totalMinutes": 777})
+        await page.wait_for_timeout(2400)
+        pushed = await page.evaluate("""async () => {
+          const r = await fetch('/auth/garden', { credentials: 'include' })
+          const d = await r.json().catch(() => ({}))
+          return d.state
+        }""")
+        check("本地改动自动写回云端", pushed is not None and pushed.get("totalMinutes") == 777,
+              str(pushed and pushed.get("totalMinutes")))
+
+        ctx3 = await browser.new_context(viewport={"width": 1440, "height": 900})
+        page3 = await ctx3.new_page()
+        await page3.goto(BASE, wait_until="networkidle")
+        await page3.wait_for_timeout(800)
+        anon = await page3.evaluate("""async () => {
+          const r = await fetch('/auth/garden', { credentials: 'include' })
+          return r.status
+        }""")
+        check("未登录访问云端存档返回 401", anon == 401, str(anon))
+        await ctx3.close()
+
+        # 收尾：把云端存档复位，别把测试数据留给下一轮
+        await set_garden(page, {"totalMinutes": 0, "spentSunlight": 0, "trees": [], "sessions": 0,
+                                "unlocked": ["maple", "pine", "cherry", "oak"], "plotLevel": 0,
+                                "streak": 0, "lastSessionDay": "", "lastPlantedAt": 0})
+        await page.wait_for_timeout(2400)
 
         fatal = [e for e in errors if "favicon" not in e.lower() and "404" not in e]
         check("无前端报错", len(fatal) == 0, "; ".join(fatal[:3]))
